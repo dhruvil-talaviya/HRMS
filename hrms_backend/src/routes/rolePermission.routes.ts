@@ -1,15 +1,14 @@
 import { Router } from "express";
-import { authMiddleware } from "../middleware/auth.middleware";
-
+import { authMiddleware, requireAdmin } from "../middleware/auth.middleware";
 import {
   saveRolePermissions,
   getRolePermissions,
 } from "../controllers/rolePermission.controller";
 
-
 const router = Router();
 
-// router.put( "/", authMiddleware,saveRolePermissions,);
-// router.get( "/:roleId", authMiddleware, getRolePermissions,);
+router.put("/", authMiddleware, requireAdmin, saveRolePermissions);
+router.get("/:roleId", authMiddleware, requireAdmin, getRolePermissions);
 
 export default router;
+

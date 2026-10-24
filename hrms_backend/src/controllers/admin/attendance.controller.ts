@@ -9,6 +9,7 @@ import {
   getShiftAssignmentsService,
   createShiftAssignmentService,
   updateShiftAssignmentService,
+  deleteShiftAssignmentService,
   getAttendanceSettingsService,
   updateAttendanceSettingsService,
   getHolidaysService,
@@ -108,6 +109,16 @@ export const updateShiftAssignment = async (req: Request, res: Response) => {
     const { dbName } = getUser(req);
     const data = await updateShiftAssignmentService(dbName, String(req.params.id), req.body);
     return res.json({ success: true, data });
+  } catch (e: any) {
+    return res.status(400).json({ success: false, message: e.message });
+  }
+};
+
+export const deleteShiftAssignment = async (req: Request, res: Response) => {
+  try {
+    const { dbName } = getUser(req);
+    await deleteShiftAssignmentService(dbName, String(req.params.id));
+    return res.json({ success: true, message: "Shift assignment deleted successfully" });
   } catch (e: any) {
     return res.status(400).json({ success: false, message: e.message });
   }

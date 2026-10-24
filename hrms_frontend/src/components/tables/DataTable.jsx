@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { MdArrowUpward, MdArrowDownward, MdInbox } from "react-icons/md";
 
-const DataTable = ({ columns, data = [], pageSize = 10, emptyMessage = "No records found" }) => {
+const DataTable = ({ columns, data = [], pageSize = 10, emptyMessage = "no records found" }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
@@ -91,7 +91,7 @@ const DataTable = ({ columns, data = [], pageSize = 10, emptyMessage = "No recor
               {columns.map((col, index) => (
                 <th
                   key={index}
-                  className={`px-6 py-4 font-semibold text-text-secondary select-none ${
+                  className={`px-6 py-4 font-semibold text-text-secondary select-none lowercase ${
                     col.sortable ? "cursor-pointer hover:text-primary transition-all" : ""
                   }`}
                   onClick={() => requestSort(col.accessor, col.sortable)}
@@ -129,28 +129,28 @@ const DataTable = ({ columns, data = [], pageSize = 10, emptyMessage = "No recor
       </div>
 
       {sortedData.length > pageSize && (
-        <div className="px-6 py-4 border-t border-border-color flex items-center justify-between bg-bg-secondary">
+        <div className="px-6 py-4 border-t border-border-color flex items-center justify-between bg-bg-secondary lowercase">
           <span className="text-xs text-text-secondary">
-            Showing {Math.min((currentPage - 1) * pageSize + 1, sortedData.length)} to{" "}
+            showing {Math.min((currentPage - 1) * pageSize + 1, sortedData.length)} to{" "}
             {Math.min(currentPage * pageSize, sortedData.length)} of {sortedData.length} entries
           </span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-3 py-1.5 rounded-md border border-border-color bg-bg-secondary text-text-primary text-xs font-semibold cursor-pointer transition-all hover:bg-bg-primary hover:border-primary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 rounded-md border border-border-color bg-bg-secondary text-text-primary text-xs font-semibold cursor-pointer transition-all hover:bg-bg-primary hover:border-primary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed lowercase"
             >
-              Previous
+              previous
             </button>
-            <span className="text-sm font-semibold px-2 text-text-primary">
-              Page {currentPage} of {totalPages}
+            <span className="text-sm font-semibold px-2 text-text-primary lowercase">
+              page {currentPage} of {totalPages}
             </span>
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="px-3 py-1.5 rounded-md border border-border-color bg-bg-secondary text-text-primary text-xs font-semibold cursor-pointer transition-all hover:bg-bg-primary hover:border-primary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 rounded-md border border-border-color bg-bg-secondary text-text-primary text-xs font-semibold cursor-pointer transition-all hover:bg-bg-primary hover:border-primary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed lowercase"
             >
-              Next
+              next
             </button>
           </div>
         </div>

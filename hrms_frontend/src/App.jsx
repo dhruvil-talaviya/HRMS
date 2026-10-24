@@ -51,7 +51,6 @@ function AdminRoute() {
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const isStaff = storedUser?.role === "EMPLOYEE" || storedUser?.isStaff === true;
 
-
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (isStaff) return <Navigate to="/staff/dashboard" replace />;
   return <DashboardLayout />;
@@ -61,18 +60,50 @@ function StaffRoute() {
   const isAuthenticated = !!localStorage.getItem("token");
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const isStaff = storedUser?.role === "EMPLOYEE" || storedUser?.isStaff === true;
-
+  const requiresPasswordSetup = storedUser?.isFirstLogin === true || storedUser?.requiresPasswordSetup === true;
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (requiresPasswordSetup) return <Navigate to="/setup-password" replace />;
   if (!isStaff) return <Navigate to="/dashboard" replace />;
   return <StaffDashboardLayout />;
 }
 
-function App() {
+function PublicRoute({ children }) {
   const isAuthenticated = !!localStorage.getItem("token");
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const isStaff = storedUser?.role === "EMPLOYEE" || storedUser?.isStaff === true;
+  const requiresPasswordSetup = storedUser?.isFirstLogin === true || storedUser?.requiresPasswordSetup === true;
 
+  if (isAuthenticated) {
+    if (requiresPasswordSetup) return <Navigate to="/setup-password" replace />;
+    return <Navigate to={isStaff ? "/staff/dashboard" : "/dashboard"} replace />;
+  }
+  return children;
+}
+
+function SetupPasswordRoute() {
+  const isAuthenticated = !!localStorage.getItem("token");
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <SetupPassword />;
+}
+
+function FallbackRoute() {
+  const isAuthenticated = !!localStorage.getItem("token");
+  const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const isStaff = storedUser?.role === "EMPLOYEE" || storedUser?.isStaff === true;
+  const requiresPasswordSetup = storedUser?.isFirstLogin === true || storedUser?.requiresPasswordSetup === true;
+
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (requiresPasswordSetup) return <Navigate to="/setup-password" replace />;
+  return (
+    <Navigate
+      to={isStaff ? "/staff/dashboard" : "/dashboard"}
+      replace
+    />
+  );
+}
+
+function App() {
   return (
     <AuthProvider>
     <ThemeProvider>
@@ -84,26 +115,22 @@ function App() {
         <Route
           path="/login"
           element={
-            isAuthenticated ? (
-              <Navigate to={isStaff ? "/staff/dashboard" : "/dashboard"} replace />
-            ) : (
+            <PublicRoute>
               <Login />
-            )
+            </PublicRoute>
           }
         />
 
         <Route
           path="/register"
           element={
-            isAuthenticated ? (
-              <Navigate to={isStaff ? "/staff/dashboard" : "/dashboard"} replace />
-            ) : (
+            <PublicRoute>
               <Register />
-            )
+            </PublicRoute>
           }
         />
 
-        <Route path="/setup-password" element={<SetupPassword />} />
+        <Route path="/setup-password" element={<SetupPasswordRoute />} />
 
         {/* Admin Protected Routes — admin only, staff gets redirected to /staff/dashboard */}
         <Route element={<AdminRoute />}>
@@ -139,15 +166,7 @@ function App() {
         </Route>
 
         {/* Fallback */}
-        <Route
-          path="*"
-          element={
-            <Navigate
-              to={isAuthenticated ? (isStaff ? "/staff/dashboard" : "/dashboard") : "/login"}
-              replace
-            />
-          }
-        />
+        <Route path="*" element={<FallbackRoute />} />
           </Routes>
         </BrowserRouter>
       </HRMSDataProvider>

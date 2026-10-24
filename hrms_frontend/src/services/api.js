@@ -14,6 +14,21 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("permissions");
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 
 export const registerCompany = (data) =>
   api.post("/auth/register-company", data);
@@ -93,6 +108,10 @@ export const updateStaff = (id, data) => {
   return api.put(`/staff/${id}`, data);
 };
 
+export const updateStaffStatus = (id, status) => {
+  return api.put(`/staff/${id}/status`, { status });
+};
+
 // leave api
 export const applyLeave = (data) => {
   return api.post("/leave/apply", data);
@@ -159,11 +178,7 @@ export const getShiftAssignments = () => api.get("/attendance/shift-assignment")
 export const updateShiftAssignment = (id, data) => api.put(`/attendance/shift-assignment/${id}`, data);
 // Add this alongside your other exports like getShiftAssignments, createShiftAssignment, etc.
 
-export const deleteShiftAssignment = async (id) => {
-  // IMPORTANT: Adjust the URL below to match your actual backend route for deleting shift assignments
-  return await axios.delete(`/api/shift-assignments/${id}`); 
-};
-
+export const deleteShiftAssignment = (id) => api.delete(`/attendance/shift-assignment/${id}`);
 
 export const getAttendanceSettings = () => api.get("/attendance/settings");
 export const updateAttendanceSettings = (data) => api.put("/attendance/settings", data);
@@ -180,13 +195,23 @@ export const getAttendanceRequestById = (id) => api.get(`/attendance/requests/${
 export const approveAttendanceRequest = (id, data) => api.put(`/attendance/requests/${id}/approve`, data);
 export const rejectAttendanceRequest = (id, data) => api.put(`/attendance/requests/${id}/reject`, data);
 
-//get staff profile
+// Payroll APIs
+export const getPayrolls = (params) => api.get("/payroll", { params });
+export const getPayrollById = (id) => api.get(`/payroll/${id}`);
+export const previewPayroll = (params) => api.get("/payroll/preview", { params });
+export const generateMonthlyPayroll = (data) => api.post("/payroll/generate", data);
+export const createPayroll = (data) => api.post("/payroll", data);
+export const updatePayroll = (id, data) => api.put(`/payroll/${id}`, data);
+export const processPayroll = (id) => api.put(`/payroll/process/${id}`);
+export const deletePayroll = (id) => api.delete(`/payroll/${id}`);
+export const getMyPayroll = () => api.get("/payroll/my-payroll");
 
-export const  getMyProfile = (data) => {
+// get staff profile
+export const getMyProfile = (data) => {
   return api.get("/myprofile", data);
 };
 
-export const  updateMyProfile = (data) => {
+export const updateMyProfile = (data) => {
   return api.put("/myprofile", data);
 };
 

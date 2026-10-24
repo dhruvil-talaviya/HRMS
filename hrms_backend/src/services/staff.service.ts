@@ -1,38 +1,67 @@
+import bcrypt from "bcrypt";
 import { getTenantConnection } from "../connection/tenant.connection";
 import { Staff } from "../entity/tenant/staff.entity";
 import { Leave } from "../entity/tenant/staff/staff.leave.entity";
 import { Department } from "../entity/tenant/department.entity";
 import { Designation } from "../entity/tenant/designation.entity";
+
+const sanitizeStaff = (staff: any) => {
+  if (!staff) return null;
+  const clone = { ...staff };
+  delete clone.password;
+  return clone;
+};
+
 export const createStaffService = async (dbName: string, data: any) => {
   const dataSource = await getTenantConnection(dbName);
   const staffRepo = dataSource.getRepository(Staff);
 
-  const staff = staffRepo.create({
-    fullName: data.fullName,
-    email: data.email,
-    role: data.role,
-    phone: data.phone,
-    password: data.password,
-    gender: data.gender,
-    departmentId: data.departmentId,
-    designationId: data.designationId,
-    salary: data.salary,
-    dob: data.dob,
-    joiningDate: data.joiningDate,
-    address: data.address,
-    accessRoleId: data.accessRoleId,
+  if (!data.email || !data.email.trim()) {
+    throw new Error("email is required");
+  }
+
+  const existing = await staffRepo.findOne({
+    where: { email: data.email.trim().toLowerCase() },
   });
+  if (existing) {
+    throw new Error("employee with this email already exists");
+  }
+
+  const defaultPassword = data.password && data.password.trim().length >= 6 ? data.password.trim() : "Password@123";
+  const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+  const staff = staffRepo.create({
+    fullName: data.fullName?.trim() || "",
+    email: data.email.trim().toLowerCase(),
+    role: data.role || "EMPLOYEE",
+    phone: data.phone || "",
+    password: hashedPassword,
+    gender: data.gender || "",
+    departmentId: data.departmentId ? String(data.departmentId) : undefined,
+    designationId: data.designationId ? String(data.designationId) : undefined,
+    salary: data.salary ? Number(data.salary) : 0,
+    dob: data.dob || null,
+    joiningDate: data.joiningDate || new Date().toISOString().split("T")[0],
+    address: data.address || "",
+    accessRoleId: data.accessRoleId ? String(data.accessRoleId) : undefined,
+    status: data.status || "InActive",
+    isFirstLogin: true,
+  } as any);
 
   const savedStaff = await staffRepo.save(staff);
-  return savedStaff;
+  return sanitizeStaff(savedStaff);
 };
 
 export const getAllStaffService = async (dbName: string) => {
   const dataSource = await getTenantConnection(dbName);
-
   const staffRepo = dataSource.getRepository(Staff);
 
-  return await staffRepo.find();
+  const staffList = await staffRepo.find({
+    relations: { department: true, designation: true },
+    order: { id: "ASC" },
+  });
+
+  return staffList.map(sanitizeStaff);
 };
 
 export const updateStaffStatusService = async (
@@ -43,16 +72,16 @@ export const updateStaffStatusService = async (
   const dataSource = await getTenantConnection(dbName);
   const staffRepo = dataSource.getRepository(Staff);
   const staff = await staffRepo.findOne({
-    where: { id },
+    where: { id: Number(id) },
   });
 
   if (!staff) {
-    throw new Error("Staff not found");
+    throw new Error("staff not found");
   }
 
   staff.status = status;
-
-  return await staffRepo.save(staff);
+  const saved = await staffRepo.save(staff);
+  return sanitizeStaff(saved);
 };
 
 export const setupPasswordService = async (
@@ -63,12 +92,18 @@ export const setupPasswordService = async (
   const dataSource = await getTenantConnection(dbName);
   const staffRepo = dataSource.getRepository(Staff);
 
-  const staff = await staffRepo.findOne({ where: { id: staffId } });
-  if (!staff) throw new Error("Staff not found");
+  const staff = await staffRepo.findOne({ where: { id: Number(staffId) } });
+  if (!staff) throw new Error("staff not found");
 
-  staff.password = newPassword;
+  if (!newPassword || newPassword.length < 6) {
+    throw new Error("password must be at least 6 characters");
+  }
+
+  staff.password = await bcrypt.hash(newPassword, 10);
   staff.status = "Active";
-  return await staffRepo.save(staff);
+  staff.isFirstLogin = false;
+  const saved = await staffRepo.save(staff);
+  return sanitizeStaff(saved);
 };
 
 export const getStaffByIdService = async (dbName: string, id: number) => {
@@ -86,67 +121,76 @@ export const getStaffByIdService = async (dbName: string, id: number) => {
     return null;
   }
 
-  const department = await departmentRepo.findOne({
-    where: {
-      id: staff.departmentId,
-    },
-  });
+  const department = staff.departmentId
+    ? await departmentRepo.findOne({ where: { id: String(staff.departmentId) } })
+    : null;
 
-  const designation = await designationRepo.findOne({
-    where: {
-      id: staff.designationId,
-    },
-  });
+  const designation = staff.designationId
+    ? await designationRepo.findOne({ where: { id: String(staff.designationId) } })
+    : null;
 
+  const clean = sanitizeStaff(staff);
   return {
-    ...staff,
-
+    ...clean,
     departmentName: department?.name || "",
-
     designationName: designation?.title || "",
-
-   
   };
 };
 
 export const updateStaffService = async (
   dbName: string,
-  id: Number,
+  id: number,
   data: any,
 ) => {
   const dataSource = await getTenantConnection(dbName);
-
   const staffRepo = dataSource.getRepository(Staff);
   const staff = await staffRepo.findOne({
     where: { id: Number(id) },
   });
 
   if (!staff) {
-    throw new Error("Staff not found");
+    throw new Error("staff not found");
   }
 
-  Object.assign(staff, {
-    ...data,
-  });
+  if (data.email && data.email.trim().toLowerCase() !== staff.email) {
+    const existing = await staffRepo.findOne({
+      where: { email: data.email.trim().toLowerCase() },
+    });
+    if (existing && existing.id !== staff.id) {
+      throw new Error("email is already in use by another staff member");
+    }
+    staff.email = data.email.trim().toLowerCase();
+  }
+
+  if (data.fullName !== undefined) staff.fullName = data.fullName;
+  if (data.phone !== undefined) staff.phone = data.phone;
+  if (data.gender !== undefined) staff.gender = data.gender;
+  if (data.departmentId !== undefined) staff.departmentId = String(data.departmentId);
+  if (data.designationId !== undefined) staff.designationId = String(data.designationId);
+  if (data.salary !== undefined) staff.salary = Number(data.salary);
+  if (data.dob !== undefined) staff.dob = data.dob;
+  if (data.joiningDate !== undefined) staff.joiningDate = data.joiningDate;
+  if (data.address !== undefined) staff.address = data.address;
+  if (data.accessRoleId !== undefined) staff.accessRoleId = String(data.accessRoleId);
+  if (data.status !== undefined) staff.status = data.status;
+
+  if (data.password && data.password.trim()) {
+    staff.password = await bcrypt.hash(data.password.trim(), 10);
+  }
 
   const updatedStaff = await staffRepo.save(staff);
-
-  return updatedStaff;
+  return sanitizeStaff(updatedStaff);
 };
 
 export const getAllLeaveService = async (dbName: string) => {
   const dataSource = await getTenantConnection(dbName);
-
   const leaveRepo = dataSource.getRepository(Leave);
 
-  const leaves = await leaveRepo.find({
-    order: {
-      createdAt: "DESC",
-    },
+  return await leaveRepo.find({
+    order: { createdAt: "DESC" },
   });
-
-  return leaves;
 };
+
 
 export const updateLeaveStatusService = async (
   dbName: string,
@@ -157,14 +201,19 @@ export const updateLeaveStatusService = async (
   const leaveRepo = dataSource.getRepository(Leave);
 
   const leave = await leaveRepo.findOne({
-    where: { id: leaveId },
+    where: { id: Number(leaveId) },
   });
 
   if (!leave) {
-    throw new Error("Leave request not found");
+    throw new Error("leave request not found");
   }
 
-  leave.status = status.toUpperCase();
-  
+  const upperStatus = status.trim().toUpperCase();
+  if (!["APPROVED", "REJECTED", "PENDING", "CANCELLED"].includes(upperStatus)) {
+    throw new Error("invalid leave status");
+  }
+
+  leave.status = upperStatus;
   return await leaveRepo.save(leave);
 };
+

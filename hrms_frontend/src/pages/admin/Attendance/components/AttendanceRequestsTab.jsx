@@ -48,7 +48,7 @@ const AttendanceRequestsTab = () => {
         setIsViewModalOpen(false);
         fetchRequests();
       }
-    } catch (err) {
+    } catch(err) {
       toast.error(err.response?.data?.message || "Error approving request");
     }
   };

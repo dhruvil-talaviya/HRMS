@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   MdSearch,
   MdNotifications,
@@ -13,33 +14,67 @@ import { useHRMSData } from "../../context/HRMSDataContext";
 import { getMyProfile } from "../../services/api";
 
 const StaffNavbar = ({ onMobileToggle }) => {
+  const navigate = useNavigate();
   const { notifications, markAllNotificationsAsRead } = useHRMSData();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("user") || "{}");
+      if (stored && (stored.name || stored.fullName || stored.email)) {
+        return {
+          name: stored.fullName || stored.name || "Employee",
+          role: stored.role || stored.accessRole || "Staff",
+          email: stored.email || "",
+          avatarColor: "#0F172A",
+        };
+      }
+    } catch {
+      // ignore
+    }
+    return {
+      name: "Employee",
+      role: "Staff Member",
+      email: "",
+      avatarColor: "#0F172A",
+    };
+  });
 
   const profileMenuRef = useRef(null);
   const notificationsRef = useRef(null);
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    localStorage.removeItem("permissions");
     window.location.href = "/login";
   };
 
-  useEffect(()=>{
-    getProfile(
+  const getProfile = async () => {
+    try {
+      const res = await getMyProfile();
+      const data = res.data?.data;
+      if (data) {
+        setCurrentUser({
+          name: data.fullName || data.name || "Employee",
+          role: data.role || data.accessRole || "Staff",
+          email: data.email || "",
+          avatarColor: "#0F172A",
+        });
+      }
+    } catch (error) {
+      console.log("Could not refresh live profile in navbar:", error);
+    }
+  };
 
-
-    )
-  })
   useEffect(() => {
-    getProfile()
+    getProfile();
+
     const handleClickOutside = (event) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
         setShowProfileMenu(false);
       }
-
       if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
         setShowNotifications(false);
       }
@@ -48,7 +83,7 @@ const StaffNavbar = ({ onMobileToggle }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = (notifications || []).filter((n) => !n.read).length;
 
   const handleNotificationClick = () => {
     setShowNotifications(!showNotifications);
@@ -56,25 +91,7 @@ const StaffNavbar = ({ onMobileToggle }) => {
       markAllNotificationsAsRead();
     }
   };
-const getProfile = async () => {
-  try {
-    const res = await getMyProfile();
-    const data = res.data.data;
 
-    setCurrentUser({
-      name: data.fullName,
-      role: data.role,
-      email: data.email,
-      avatarColor: "#0F172A",
-    });
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-if (!currentUser) {
-  return null;
-}
   return (
     <header className="h-[70px] sticky top-0 right-0 flex items-center justify-between px-6 bg-bg-secondary/80 backdrop-blur-md border-b border-border-color z-[90] transition-all">
       <div className="flex items-center gap-4">
@@ -164,12 +181,23 @@ if (!currentUser) {
                 </span>
                 <span className="text-xs text-text-muted">{currentUser.email}</span>
               </div>
-              <div className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary transition-all cursor-pointer hover:bg-bg-primary hover:text-primary">
+              <div
+                onClick={() => {
+                  setShowProfileMenu(false);
+                  navigate("/staff/profile");
+                }}
+                className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary transition-all cursor-pointer hover:bg-bg-primary hover:text-primary"
+              >
                 <MdPerson />
-                <span>My Profilesssss</span>
-                
+                <span>My Profile</span>
               </div>
-              <div className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary transition-all cursor-pointer hover:bg-bg-primary hover:text-primary">
+              <div
+                onClick={() => {
+                  setShowProfileMenu(false);
+                  navigate("/setup-password");
+                }}
+                className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary transition-all cursor-pointer hover:bg-bg-primary hover:text-primary"
+              >
                 <MdLockOpen />
                 <span>Reset Password</span>
               </div>

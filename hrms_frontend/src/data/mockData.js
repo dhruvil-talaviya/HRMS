@@ -1,20 +1,20 @@
 export const initialDepartments = [
-  { id: "DEPT-001", name: "Engineering", manager: "Sarah Connor", headcount: 45, budget: 1500000, openPositions: 4 },
-  { id: "DEPT-002", name: "Human Resources", manager: "Emma Watson", headcount: 8, budget: 350000, openPositions: 1 },
-  { id: "DEPT-003", name: "Sales & Marketing", manager: "James Bond", headcount: 22, budget: 800000, openPositions: 3 },
-  { id: "DEPT-004", name: "Finance", manager: "Tony Stark", headcount: 6, budget: 450000, openPositions: 1 },
-  { id: "DEPT-005", name: "Product & Design", manager: "Bruce Wayne", headcount: 14, budget: 600000, openPositions: 2 },
-  { id: "DEPT-006", name: "Customer Success", manager: "Diana Prince", headcount: 18, budget: 400000, openPositions: 2 }
+  { id: "DEPT-001", name: "Engineering", manager: "Priya Sharma", headcount: 45, budget: 15000000, openPositions: 4 },
+  { id: "DEPT-002", name: "Human Resources", manager: "Ananya Patel", headcount: 8, budget: 3500000, openPositions: 1 },
+  { id: "DEPT-003", name: "Sales & Marketing", manager: "Rahul Verma", headcount: 22, budget: 8000000, openPositions: 3 },
+  { id: "DEPT-004", name: "Finance", manager: "Rohan Mehta", headcount: 6, budget: 4500000, openPositions: 1 },
+  { id: "DEPT-005", name: "Product & Design", manager: "Aarav Desai", headcount: 14, budget: 6000000, openPositions: 2 },
+  { id: "DEPT-006", name: "Customer Success", manager: "Kavya Joshi", headcount: 18, budget: 4000000, openPositions: 2 }
 ];
 
 export const initialDesignations = [
-  { id: "DESG-001", name: "Senior Software Engineer", department: "Engineering", grade: "L3", baseSalary: 120000 },
-  { id: "DESG-002", name: "Software Engineer", department: "Engineering", grade: "L2", baseSalary: 85000 },
-  { id: "DESG-003", name: "HR Manager", department: "Human Resources", grade: "L3", baseSalary: 95000 },
-  { id: "DESG-004", name: "Lead Product Designer", department: "Product & Design", grade: "L4", baseSalary: 140000 },
-  { id: "DESG-005", name: "Sales Director", department: "Sales & Marketing", grade: "L4", baseSalary: 130000 },
-  { id: "DESG-006", name: "Financial Analyst", department: "Finance", grade: "L2", baseSalary: 90000 },
-  { id: "DESG-007", name: "Support Specialist", department: "Customer Success", grade: "L1", baseSalary: 55000 }
+  { id: "DESG-001", name: "Senior Software Engineer", department: "Engineering", grade: "L3", baseSalary: 1200000 },
+  { id: "DESG-002", name: "Software Engineer", department: "Engineering", grade: "L2", baseSalary: 850000 },
+  { id: "DESG-003", name: "HR Manager", department: "Human Resources", grade: "L3", baseSalary: 950000 },
+  { id: "DESG-004", name: "Lead Product Designer", department: "Product & Design", grade: "L4", baseSalary: 1400000 },
+  { id: "DESG-005", name: "Sales Director", department: "Sales & Marketing", grade: "L4", baseSalary: 1300000 },
+  { id: "DESG-006", name: "Financial Analyst", department: "Finance", grade: "L2", baseSalary: 900000 },
+  { id: "DESG-007", name: "Support Specialist", department: "Customer Success", grade: "L1", baseSalary: 550000 }
 ];
 
 export const initialEmployees = [
@@ -22,7 +22,7 @@ export const initialEmployees = [
     id: "EMP-2024-001",
     name: "Alex Johnson",
     email: "alex.j@enterprise-hrms.com",
-    phone: "+1 (555) 019-2834",
+    phone: "+91 98765 43210",
     department: "Engineering",
     designation: "Senior Software Engineer",
     joiningDate: "2024-03-12",
@@ -30,19 +30,19 @@ export const initialEmployees = [
     role: "Admin",
     avatarColor: "#2563EB",
     gender: "Male",
-    dateOfBirth: "1990-08-24",
-    address: "742 Evergreen Terrace, Springfield, OR",
+    dateOfBirth: "1993-08-24",
+    address: "B-402, Satellite Heights, SG Highway, Ahmedabad, Gujarat",
     emergencyContact: {
-      name: "Helen Johnson",
-      relationship: "Spouse",
-      phone: "+1 (555) 019-2835"
+      name: "Sunita Patel",
+      relationship: "Mother",
+      phone: "+91 98765 43211"
     },
     payroll: {
-      basic: 9500,
-      allowances: 1500,
-      deductions: 800,
-      tax: 1200,
-      net: 9000,
+      basic: 95000,
+      allowances: 15000,
+      deductions: 8000,
+      tax: 12000,
+      net: 90000,
       status: "Processed"
     },
     leaveBalance: {
@@ -63,9 +63,9 @@ export const initialEmployees = [
   },
   {
     id: "EMP-2024-002",
-    name: "Emma Watson",
-    email: "emma.w@enterprise-hrms.com",
-    phone: "+1 (555) 022-9844",
+    name: "Ananya Patel",
+    email: "ananya.p@enterprise-hrms.com",
+    phone: "+91 98250 12345",
     department: "Human Resources",
     designation: "HR Manager",
     joiningDate: "2024-01-15",
@@ -73,19 +73,19 @@ export const initialEmployees = [
     role: "HR Manager",
     avatarColor: "#22C55E",
     gender: "Female",
-    dateOfBirth: "1992-04-15",
-    address: "12 Rosewood Lane, Boston, MA",
+    dateOfBirth: "1994-04-15",
+    address: "A-12, Alkapuri Apartments, Vadodara, Gujarat",
     emergencyContact: {
-      name: "Richard Watson",
+      name: "Rajesh Patel",
       relationship: "Father",
-      phone: "+1 (555) 022-9845"
+      phone: "+91 98250 12346"
     },
     payroll: {
-      basic: 7800,
-      allowances: 1200,
-      deductions: 600,
-      tax: 900,
-      net: 7500,
+      basic: 78000,
+      allowances: 12000,
+      deductions: 6000,
+      tax: 9000,
+      net: 75000,
       status: "Processed"
     },
     leaveBalance: {
@@ -106,9 +106,9 @@ export const initialEmployees = [
   },
   {
     id: "EMP-2024-003",
-    name: "Bruce Wayne",
-    email: "bruce.w@enterprise-hrms.com",
-    phone: "+1 (555) 100-3490",
+    name: "Aarav Desai",
+    email: "aarav.d@enterprise-hrms.com",
+    phone: "+91 99090 87654",
     department: "Product & Design",
     designation: "Lead Product Designer",
     joiningDate: "2024-06-01",
@@ -116,19 +116,19 @@ export const initialEmployees = [
     role: "Employee",
     avatarColor: "#0F172A",
     gender: "Male",
-    dateOfBirth: "1988-10-27",
-    address: "1007 Mountain Drive, Gotham City, NJ",
+    dateOfBirth: "1991-10-27",
+    address: "15, Green Avenue, Bandra West, Mumbai, Maharashtra",
     emergencyContact: {
-      name: "Alfred Pennyworth",
-      relationship: "Guardian",
-      phone: "+1 (555) 100-3499"
+      name: "Meera Desai",
+      relationship: "Spouse",
+      phone: "+91 99090 87655"
     },
     payroll: {
-      basic: 11000,
-      allowances: 2000,
-      deductions: 1000,
-      tax: 1500,
-      net: 10500,
+      basic: 110000,
+      allowances: 20000,
+      deductions: 10000,
+      tax: 15000,
+      net: 105000,
       status: "Processed"
     },
     leaveBalance: {
@@ -149,9 +149,9 @@ export const initialEmployees = [
   },
   {
     id: "EMP-2024-004",
-    name: "Sarah Connor",
-    email: "sarah.c@enterprise-hrms.com",
-    phone: "+1 (555) 234-5678",
+    name: "Priya Sharma",
+    email: "priya.s@enterprise-hrms.com",
+    phone: "+91 97123 45678",
     department: "Engineering",
     designation: "Senior Software Engineer",
     joiningDate: "2024-02-10",
@@ -159,19 +159,19 @@ export const initialEmployees = [
     role: "Employee",
     avatarColor: "#EF4444",
     gender: "Female",
-    dateOfBirth: "1985-05-13",
-    address: "42 Desert Highway, Los Angeles, CA",
+    dateOfBirth: "1992-05-13",
+    address: "C-101, Cyber City Residency, Gurugram, Haryana",
     emergencyContact: {
-      name: "John Connor",
-      relationship: "Son",
-      phone: "+1 (555) 234-5679"
+      name: "Vikram Sharma",
+      relationship: "Spouse",
+      phone: "+91 97123 45679"
     },
     payroll: {
-      basic: 9600,
-      allowances: 1400,
-      deductions: 700,
-      tax: 1100,
-      net: 9200,
+      basic: 96000,
+      allowances: 14000,
+      deductions: 7000,
+      tax: 11000,
+      net: 92000,
       status: "Pending"
     },
     leaveBalance: {
@@ -192,9 +192,9 @@ export const initialEmployees = [
   },
   {
     id: "EMP-2024-005",
-    name: "Tony Stark",
-    email: "tony.s@enterprise-hrms.com",
-    phone: "+1 (555) 300-4000",
+    name: "Rohan Mehta",
+    email: "rohan.m@enterprise-hrms.com",
+    phone: "+91 98980 11223",
     department: "Finance",
     designation: "Financial Analyst",
     joiningDate: "2024-05-18",
@@ -202,19 +202,19 @@ export const initialEmployees = [
     role: "Admin",
     avatarColor: "#F59E0B",
     gender: "Male",
-    dateOfBirth: "1980-05-29",
-    address: "10880 Malibu Point, Malibu, CA",
+    dateOfBirth: "1990-05-29",
+    address: "502, Shivalik Towers, Vestar, Surat, Gujarat",
     emergencyContact: {
-      name: "Pepper Potts",
+      name: "Pooja Mehta",
       relationship: "Spouse",
-      phone: "+1 (555) 300-4001"
+      phone: "+91 98980 11224"
     },
     payroll: {
-      basic: 7500,
-      allowances: 1000,
-      deductions: 500,
-      tax: 800,
-      net: 7200,
+      basic: 75000,
+      allowances: 10000,
+      deductions: 5000,
+      tax: 8000,
+      net: 72000,
       status: "Processed"
     },
     leaveBalance: {
@@ -235,9 +235,9 @@ export const initialEmployees = [
   },
   {
     id: "EMP-2024-006",
-    name: "Diana Prince",
-    email: "diana.p@enterprise-hrms.com",
-    phone: "+1 (555) 987-6543",
+    name: "Kavya Joshi",
+    email: "kavya.j@enterprise-hrms.com",
+    phone: "+91 97234 56789",
     department: "Customer Success",
     designation: "Support Specialist",
     joiningDate: "2024-08-20",
@@ -245,19 +245,19 @@ export const initialEmployees = [
     role: "Employee",
     avatarColor: "#8B5CF6",
     gender: "Female",
-    dateOfBirth: "1993-11-10",
-    address: "1 Gateway Plaza, Washington, DC",
+    dateOfBirth: "1995-11-10",
+    address: "701, Pride Park, Koregaon Park, Pune, Maharashtra",
     emergencyContact: {
-      name: "Steve Trevor",
-      relationship: "Partner",
-      phone: "+1 (555) 987-6544"
+      name: "Suresh Joshi",
+      relationship: "Father",
+      phone: "+91 97234 56790"
     },
     payroll: {
-      basic: 5200,
-      allowances: 800,
-      deductions: 300,
-      tax: 500,
-      net: 5200,
+      basic: 52000,
+      allowances: 8000,
+      deductions: 3000,
+      tax: 5000,
+      net: 52000,
       status: "Processed"
     },
     leaveBalance: {
@@ -278,9 +278,9 @@ export const initialEmployees = [
   },
   {
     id: "EMP-2024-007",
-    name: "Clark Kent",
-    email: "clark.k@enterprise-hrms.com",
-    phone: "+1 (555) 456-7890",
+    name: "Rahul Verma",
+    email: "rahul.v@enterprise-hrms.com",
+    phone: "+91 98111 22334",
     department: "Sales & Marketing",
     designation: "Sales Director",
     joiningDate: "2024-04-01",
@@ -289,15 +289,15 @@ export const initialEmployees = [
     avatarColor: "#3B82F6",
     gender: "Male",
     dateOfBirth: "1989-02-28",
-    address: "344 Clinton Street, Apt 3B, Metropolis, NY",
+    address: "Flat 304, Palm Grove, Whitefield, Bengaluru, Karnataka",
     emergencyContact: {
-      name: "Lois Lane",
+      name: "Neha Verma",
       relationship: "Spouse",
-      phone: "+1 (555) 456-7891"
+      phone: "+91 98111 22335"
     },
     payroll: {
-      basic: 10000,
-      allowances: 3000,
+      basic: 100000,
+      allowances: 30000,
       deductions: 900,
       tax: 1400,
       net: 10700,

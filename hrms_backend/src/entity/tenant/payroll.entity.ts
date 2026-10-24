@@ -38,6 +38,18 @@ export class Payroll {
   @Column("decimal", { default: 0 })
   tax!: number;
 
+  @Column("decimal", { default: 0 })
+  overtimePay!: number;
+
+  @Column("decimal", { default: 0 })
+  shiftAllowance!: number;
+
+  @Column("decimal", { default: 0 })
+  lopDeduction!: number;
+
+  @Column("decimal", { default: 0 })
+  lateDeduction!: number;
+
   @Column("decimal")
   netSalary!: number;
 
@@ -53,10 +65,34 @@ export class Payroll {
   status!: string;
 
   @Column({
+    type: "jsonb",
+    nullable: true,
+  })
+  attendanceDetails!: any;
+
+  @Column({
+    type: "jsonb",
+    nullable: true,
+  })
+  salaryBreakdown!: any;
+
+  @Column({
+    type: "varchar",
+    nullable: true,
+  })
+  paymentDate!: string | null;
+
+  @Column({
+    type: "text",
+    nullable: true,
+  })
+  remarks!: string | null;
+
+  @Column({
     type: "timestamp",
     nullable: true,
   })
-  processedAt!: Date;
+  processedAt!: Date | null;
 
   @CreateDateColumn()
   createdAt!: Date;

@@ -29,18 +29,18 @@ const Sidebar = ({
   setIsMobileOpen,
 }) => {
   const menuItems = [
-    { name: "Dashboard", path: "/dashboard", icon: <MdDashboard /> },
-    { name: "Staff Management", path: "/employees", icon: <MdPeople /> },
-    { name: "Attendance", path: "/attendance", icon: <MdAccessTime /> },
-    { name: "Leave Management", path: "/leave", icon: <MdEventBusy /> },
-    { name: "Payroll", path: "/payroll", icon: <MdPayments /> },
-    { name: "Performance", path: "/performance", icon: <MdStarBorder /> },
-    { name: "Recruitment", path: "/recruitment", icon: <MdWorkOutline /> },
-    { name: "Departments", path: "/departments", icon: <MdBusiness /> },
-    { name: "Designations", path: "/designations", icon: <MdBadge /> },
-    { name: "Reports", path: "/reports", icon: <MdAssessment /> },
-    { name: "Calendar", path: "/calendar", icon: <MdCalendarToday /> },
-    { name: "Settings", path: "/settings", icon: <MdSettings /> },
+    { name: "dashboard", path: "/dashboard", icon: <MdDashboard /> },
+    { name: "staff management", path: "/employees", icon: <MdPeople /> },
+    { name: "attendance", path: "/attendance", icon: <MdAccessTime /> },
+    { name: "leave management", path: "/leave", icon: <MdEventBusy /> },
+    { name: "payroll", path: "/payroll", icon: <MdPayments /> },
+    { name: "performance", path: "/performance", icon: <MdStarBorder /> },
+    { name: "recruitment", path: "/recruitment", icon: <MdWorkOutline /> },
+    { name: "departments", path: "/departments", icon: <MdBusiness /> },
+    { name: "designations", path: "/designations", icon: <MdBadge /> },
+    { name: "reports", path: "/reports", icon: <MdAssessment /> },
+    { name: "calendar", path: "/calendar", icon: <MdCalendarToday /> },
+    { name: "settings", path: "/settings", icon: <MdSettings /> },
   ];
 
   return (

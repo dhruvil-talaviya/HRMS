@@ -25,11 +25,21 @@ const startAttendanceSweeper = () => {
 DatabaseConnection.initialize()
   .then(async () => {
     console.log("Master Database Connected");
-  
+
+    const { Roles } = await import("./entity/master/roles.entity");
+    const roleRepo = DatabaseConnection.getRepository(Roles);
+    const masterRoles = ["SUPER_ADMIN", "TENANT_ADMIN", "EMPLOYEE"];
+    for (const name of masterRoles) {
+      const exists = await roleRepo.findOne({ where: { name } });
+      if (!exists) {
+        await roleRepo.save({ name, is_deleted: false });
+      }
+    }
 
     app.listen(PORT, () => {
       console.log(`Server Running On Port ${PORT}`);
     });
+
 
     startAttendanceSweeper();
   })

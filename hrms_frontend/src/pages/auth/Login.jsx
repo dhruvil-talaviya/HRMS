@@ -4,12 +4,14 @@ import { login } from "../../services/api";
 import logo from "../../assets/hrms_logo.png";
 import { toast } from "react-toastify";
 import { useHRMSData } from "../../context/HRMSDataContext";
+import { useAuth } from "../../context/AuthContext";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { hasPermission } from "../../utils/hasPermission";
 
 const Login = () => {
   const navigate = useNavigate();
   const { setCurrentUser } = useHRMSData();
+  const { setUser, setPermissions, setToken } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -43,9 +45,9 @@ const Login = () => {
       localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("permissions", JSON.stringify(permissions || []));
 
-      // setUser(response.user);
-      // setPermissions(response.permissions);
-      // setToken(response.token);
+      if (setUser) setUser(user);
+      if (setPermissions) setPermissions(permissions || []);
+      if (setToken) setToken(token);
 
       console.log("USER =>", user);
       console.log("PERMISSIONS =>", permissions);
@@ -55,31 +57,13 @@ const Login = () => {
 
       if (requiresPasswordSetup) {
         navigate("/setup-password");
+      } else if (user?.isStaff === true || user?.role === "EMPLOYEE") {
+        navigate("/staff/dashboard");
       } else {
-        switch (user.role) {
-          case "TENANT_ADMIN":
-            navigate("/dashboard");
-            break;
-
-          case "HR":
-            navigate("/hr/dashboard");
-            break;
-
-          case "MANAGER":
-            navigate("/manager/dashboard");
-            break;
-
-          case "EMPLOYEE":
-            navigate("/staff/dashboard");
-            break;
-
-          default:
-            navigate("/");
-            break;
-        }
+        navigate("/dashboard");
       }
     } catch (error) {
-      toast.error(error.response.data.message || "Invalid Credentials");
+      toast.error(error.response?.data?.message || "Invalid Credentials");
     } finally {
       setLoading(false);
     }
@@ -102,13 +86,13 @@ const Login = () => {
               />
             </div>
 
-            <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight mb-3">
-              Welcome Back!
+            <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight mb-3 lowercase">
+              welcome back!
             </h1>
             <div className="w-14 h-1 bg-blue-600 rounded-full mb-5"></div>
 
-            <p className="text-slate-500 text-sm lg:text-base leading-relaxed max-w-sm font-light">
-              Sign in to manage employees, attendance, payroll, departments,
+            <p className="text-slate-500 text-sm lg:text-base leading-relaxed max-w-sm font-light lowercase">
+              sign in to manage employees, attendance, payroll, departments,
               recruitment and company operations from one central dashboard.
             </p>
 
@@ -117,24 +101,24 @@ const Login = () => {
                 <h3 className="text-xl lg:text-2xl font-bold text-blue-600">
                   500+
                 </h3>
-                <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">
-                  Employees
+                <p className="text-xs text-slate-400 font-medium lowercase">
+                  employees
                 </p>
               </div>
               <div>
                 <h3 className="text-xl lg:text-2xl font-bold text-blue-600">
                   25+
                 </h3>
-                <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">
-                  Departments
+                <p className="text-xs text-slate-400 font-medium lowercase">
+                  departments
                 </p>
               </div>
               <div>
                 <h3 className="text-xl lg:text-2xl font-bold text-blue-600">
                   99%
                 </h3>
-                <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">
-                  Efficiency
+                <p className="text-xs text-slate-400 font-medium lowercase">
+                  efficiency
                 </p>
               </div>
             </div>
@@ -143,11 +127,11 @@ const Login = () => {
           {/* RIGHT SIDE (Login Form) */}
           <div className="flex items-center justify-center p-6 sm:p-10">
             <div className="w-full max-w-[360px]">
-              <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-800 mb-1">
-                Sign In
+              <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-800 mb-1 lowercase">
+                sign in
               </h2>
-              <p className="text-center text-slate-400 text-xs mb-6">
-                Access your HRMS dashboard
+              <p className="text-center text-slate-400 text-xs mb-6 lowercase">
+                access your hrms dashboard
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -155,7 +139,7 @@ const Login = () => {
                   <input
                     type="email"
                     name="email"
-                    placeholder="Email Address"
+                    placeholder="email address"
                     onChange={handleChange}
                     className="w-full h-12 px-4 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300 text-slate-700 placeholder-slate-400 text-sm"
                     required
@@ -166,7 +150,7 @@ const Login = () => {
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
-                    placeholder="Password"
+                    placeholder="password"
                     onChange={handleChange}
                     className="w-full h-12 px-4 pr-11 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300 text-slate-700 placeholder-slate-400 text-sm"
                     required
@@ -188,9 +172,9 @@ const Login = () => {
                 <div className="flex justify-end">
                   <button
                     type="button"
-                    className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition"
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition lowercase"
                   >
-                    Forgot Password?
+                    forgot password?
                   </button>
                 </div>
 
@@ -198,20 +182,20 @@ const Login = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl shadow-md hover:shadow-lg hover:shadow-blue-200/30 transition-all duration-300 active:scale-[0.98] disabled:opacity-50 text-sm tracking-wide"
+                    className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl shadow-md hover:shadow-lg hover:shadow-blue-200/30 transition-all duration-300 active:scale-[0.98] disabled:opacity-50 text-sm lowercase"
                   >
-                    {loading ? "Signing In..." : "SIGN IN"}
+                    {loading ? "signing in..." : "sign in"}
                   </button>
                 </div>
               </form>
 
-              <p className="text-center text-xs text-slate-500 mt-5">
-                Don't have an account?
+              <p className="text-center text-xs text-slate-500 mt-5 lowercase">
+                don't have an account?
                 <Link
                   to="/register"
-                  className="ml-1 text-blue-600 font-bold hover:text-blue-800 transition inline-block"
+                  className="ml-1 text-blue-600 font-bold hover:text-blue-800 transition inline-block lowercase"
                 >
-                  Register
+                  register
                 </Link>
               </p>
             </div>

@@ -12,11 +12,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <ToastContainer
       position="top-right"
       autoClose={3000}
-      hideProgressBar={false}
+      hideProgressBar={true}
       newestOnTop
       closeOnClick
       pauseOnHover
-      theme="colored"
+      theme="light"
+      toastClassName="rounded-xl shadow-lg border border-slate-100 text-sm font-medium"
     />
   </React.StrictMode>,
 );

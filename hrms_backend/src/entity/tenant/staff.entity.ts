@@ -59,10 +59,16 @@ designation!: Designation;
 password!: string;
  
   @Column({
-  type: "varchar",
-  default: "InActive",
-})
-status!: string;
+    type: "varchar",
+    default: "InActive",
+  })
+  status!: string;
+
+  @Column({
+    type: "boolean",
+    default: true,
+  })
+  isFirstLogin!: boolean;
 
 
   @CreateDateColumn()

@@ -126,12 +126,10 @@ const StaffLeave = () => {
   const fetchLeaveHistory = async () => {
     try {
       const response = await getLeave();
-
-      console.log("Leave History =>", response.data);
-
-      setHistory(response.data.data);
+      setHistory(response.data?.data || []);
     } catch (error) {
-      console.log(error);
+      console.log("Could not load leave history:", error);
+      setHistory([]);
     }
   };
 
@@ -170,7 +168,7 @@ const StaffLeave = () => {
               className={`bg-white border border-slate-100 border-l-4 ${lb.border} rounded-[24px] p-6 shadow-[0_12px_40px_rgba(0,0,0,0.03)] hover:-translate-y-1 transition-all duration-300`}
             >
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                <p className="text-xs text-slate-500 font-bold">
                   {lb.leaveType}
                 </p>
                 <span
@@ -225,7 +223,7 @@ const StaffLeave = () => {
                 ].map((h) => (
                   <th
                     key={h}
-                    className="px-5 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider"
+                    className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500"
                   >
                     {h}
                   </th>
@@ -304,7 +302,7 @@ const StaffLeave = () => {
               </div>
               <div className="flex flex-col gap-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
+                  <label className="text-xs font-semibold text-slate-600 block mb-1.5">
                     Leave Type
                   </label>
                   <select
@@ -340,7 +338,7 @@ const StaffLeave = () => {
 
                 {!isMultiDay ? (
                   <div>
-                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
+                    <label className="text-xs font-semibold text-slate-600 block mb-1.5">
                       Date
                     </label>
                     <input
@@ -355,7 +353,7 @@ const StaffLeave = () => {
                 ) : (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
+                      <label className="text-xs font-semibold text-slate-600 block mb-1.5">
                         From
                       </label>
                       <input
@@ -368,7 +366,7 @@ const StaffLeave = () => {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
+                      <label className="text-xs font-semibold text-slate-600 block mb-1.5">
                         To
                       </label>
                       <input
@@ -383,7 +381,7 @@ const StaffLeave = () => {
                   </div>
                 )}
                 <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
+                  <label className="text-xs font-semibold text-slate-600 block mb-1.5">
                     Reason
                   </label>
                   <textarea

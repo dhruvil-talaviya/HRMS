@@ -1,5 +1,4 @@
 import {
-
   ResponsiveContainer,
   AreaChart,
   Area,
@@ -15,26 +14,25 @@ import {
   Legend
 } from "recharts";
 
-// Modern custom tooltips
-const CustomTooltip = ({ active, payload, label, prefix = "" }) => {
+// Modern custom dark glass tooltips
+const CustomTooltip = ({ active, payload, label, prefix = "", suffix = "" }) => {
   if (active && payload && payload.length) {
     return (
-      <div
-        style={{
-          backgroundColor: "var(--bg-secondary)",
-          border: "1px solid var(--border-color)",
-          padding: "12px 16px",
-          borderRadius: "var(--radius-md)",
-          boxShadow: "var(--shadow-md)",
-          fontSize: "13px"
-        }}
-      >
-        <p style={{ fontWeight: 600, marginBottom: "4px" }}>{label}</p>
+      <div className="bg-slate-900/95 dark:bg-slate-950/95 text-white backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-slate-700/60 shadow-2xl text-xs z-50">
+        <p className="font-semibold text-slate-300 mb-1">{label}</p>
         {payload.map((item, index) => (
-          <p key={index} style={{ color: item.color || "var(--primary)" }}>
-            {item.name}: {prefix}
-            {item.value}
-          </p>
+          <div key={index} className="flex items-center gap-2 font-bold">
+            <span
+              className="w-2 h-2 rounded-full shrink-0 shadow-sm"
+              style={{ backgroundColor: item.color || "#3b82f6" }}
+            />
+            <span className="text-slate-300 font-medium">{item.name}:</span>
+            <span className="text-white font-mono">
+              {prefix}
+              {typeof item.value === "number" ? item.value.toLocaleString("en-IN") : item.value}
+              {suffix}
+            </span>
+          </div>
         ))}
       </div>
     );
@@ -42,65 +40,123 @@ const CustomTooltip = ({ active, payload, label, prefix = "" }) => {
   return null;
 };
 
-export const AreaChartComponent = ({ data = [], xKey = "name", yKey = "value", color = "#2563EB" }) => {
+export const AreaChartComponent = ({
+  data = [],
+  xKey = "name",
+  yKey = "value",
+  color = "#2563EB",
+  suffix = "%",
+}) => {
+  const gradientId = `grad-${xKey}-${yKey}-${color.replace(/[^a-zA-Z0-9]/g, "")}`;
+
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+    <ResponsiveContainer width="100%" height={290}>
+      <AreaChart data={data} margin={{ top: 15, right: 10, left: -20, bottom: 5 }}>
         <defs>
-          <linearGradient id={`grad-${yKey}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor={color} stopOpacity={0.35} />
             <stop offset="95%" stopColor={color} stopOpacity={0.0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
-        <XAxis dataKey={xKey} stroke="var(--text-muted)" fontSize={11} tickLine={false} />
-        <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
-        <Tooltip content={<CustomTooltip />} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.7} vertical={false} />
+        <XAxis
+          dataKey={xKey}
+          stroke="#94a3b8"
+          fontSize={12}
+          fontWeight={500}
+          tickLine={false}
+          axisLine={{ stroke: "#e2e8f0" }}
+          dy={6}
+        />
+        <YAxis
+          stroke="#94a3b8"
+          fontSize={11}
+          fontWeight={500}
+          tickLine={false}
+          axisLine={false}
+          domain={[0, 100]}
+          unit="%"
+        />
+        <Tooltip content={<CustomTooltip suffix={suffix} />} />
         <Area
           type="monotone"
           dataKey={yKey}
           stroke={color}
-          strokeWidth={2}
+          strokeWidth={2.5}
           fillOpacity={1}
-          fill={`url(#grad-${yKey})`}
+          fill={`url(#${gradientId})`}
+          activeDot={{ r: 5, fill: color, stroke: "#ffffff", strokeWidth: 2 }}
+          name="Attendance"
         />
       </AreaChart>
     </ResponsiveContainer>
   );
 };
 
-export const BarChartComponent = ({ data = [], xKey = "name", yKey = "value", color = "#2563EB", label = "Value" }) => {
+export const BarChartComponent = ({
+  data = [],
+  xKey = "name",
+  yKey = "value",
+  color = "#10B981",
+  label = "Count",
+}) => {
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
-        <XAxis dataKey={xKey} stroke="var(--text-muted)" fontSize={11} tickLine={false} />
-        <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
+    <ResponsiveContainer width="100%" height={290}>
+      <BarChart data={data} margin={{ top: 15, right: 10, left: -20, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.7} vertical={false} />
+        <XAxis
+          dataKey={xKey}
+          stroke="#94a3b8"
+          fontSize={12}
+          fontWeight={500}
+          tickLine={false}
+          axisLine={{ stroke: "#e2e8f0" }}
+          dy={6}
+        />
+        <YAxis
+          stroke="#94a3b8"
+          fontSize={11}
+          fontWeight={500}
+          tickLine={false}
+          axisLine={false}
+          allowDecimals={false}
+        />
         <Tooltip content={<CustomTooltip />} />
-        <Bar dataKey={yKey} fill={color} radius={[4, 4, 0, 0]} name={label} />
+        <Bar
+          dataKey={yKey}
+          fill={color}
+          radius={[6, 6, 0, 0]}
+          maxBarSize={36}
+          name={label}
+        />
       </BarChart>
     </ResponsiveContainer>
   );
 };
 
 export const PieChartComponent = ({ data = [], nameKey = "name", valueKey = "value" }) => {
-  const COLORS = ["#2563EB", "#22C55E", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#14B8A6"];
+  const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#14B8A6"];
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={290}>
       <PieChart>
         <Pie
           data={data}
           cx="50%"
-          cy="50%"
-          innerRadius={60}
-          outerRadius={90}
+          cy="48%"
+          innerRadius={65}
+          outerRadius={95}
           paddingAngle={4}
           dataKey={valueKey}
           nameKey={nameKey}
         >
           {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            <Cell
+              key={`cell-${index}`}
+              fill={COLORS[index % COLORS.length]}
+              stroke="#ffffff"
+              strokeWidth={2}
+            />
           ))}
         </Pie>
         <Tooltip content={<CustomTooltip />} />
@@ -109,9 +165,10 @@ export const PieChartComponent = ({ data = [], nameKey = "name", valueKey = "val
           height={36}
           iconType="circle"
           iconSize={8}
-          wrapperStyle={{ fontSize: "12px" }}
+          wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }}
         />
       </PieChart>
     </ResponsiveContainer>
   );
 };
+

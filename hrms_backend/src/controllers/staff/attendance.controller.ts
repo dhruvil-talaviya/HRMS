@@ -12,13 +12,19 @@ import {
   resetAttendanceService,
 } from "../../services/staff/attendance.service";
 import { getClientIp } from "../../utils/attendance.util";
+import { resolveTenantStaffId } from "../../utils/staffResolver.util";
 
-const getCtx = (req: Request) => (req as any).user as { userId: number; dbName: string };
+const getStaffContext = async (req: Request) => {
+  const user = (req as any).user;
+  const dbName = user?.dbName;
+  const staffId = await resolveTenantStaffId(dbName, user?.userId, user?.email);
+  return { staffId, dbName };
+};
 
 export const clockIn = async (req: Request, res: Response) => {
   try {
-    const { userId: staffId, dbName } = getCtx(req);
-    const attendance = await clockInService(dbName, Number(staffId), {
+    const { staffId, dbName } = await getStaffContext(req);
+    const attendance = await clockInService(dbName, staffId, {
       ip: getClientIp(req),
       userAgent: req.headers["user-agent"] || null,
     });
@@ -30,9 +36,9 @@ export const clockIn = async (req: Request, res: Response) => {
 
 export const clockOut = async (req: Request, res: Response) => {
   try {
-    const { userId: staffId, dbName } = getCtx(req);
+    const { staffId, dbName } = await getStaffContext(req);
     const { workSummary } = req.body || {};
-    const attendance = await clockOutService(dbName, Number(staffId), workSummary);
+    const attendance = await clockOutService(dbName, staffId, workSummary);
     return res.status(200).json({ success: true, message: "Clocked out successfully", data: attendance });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message });
@@ -41,8 +47,8 @@ export const clockOut = async (req: Request, res: Response) => {
 
 export const startBreak = async (req: Request, res: Response) => {
   try {
-    const { userId: staffId, dbName } = getCtx(req);
-    const attendance = await startBreakService(dbName, Number(staffId), req.body || {});
+    const { staffId, dbName } = await getStaffContext(req);
+    const attendance = await startBreakService(dbName, staffId, req.body || {});
     return res.status(200).json({ success: true, message: "Break started successfully", data: attendance });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message });
@@ -51,8 +57,8 @@ export const startBreak = async (req: Request, res: Response) => {
 
 export const endBreak = async (req: Request, res: Response) => {
   try {
-    const { userId: staffId, dbName } = getCtx(req);
-    const attendance = await endBreakService(dbName, Number(staffId), req.body || {});
+    const { staffId, dbName } = await getStaffContext(req);
+    const attendance = await endBreakService(dbName, staffId, req.body || {});
     return res.status(200).json({ success: true, message: "Break ended successfully", data: attendance });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message });
@@ -61,8 +67,8 @@ export const endBreak = async (req: Request, res: Response) => {
 
 export const getTodayAttendance = async (req: Request, res: Response) => {
   try {
-    const { userId: staffId, dbName } = getCtx(req);
-    const data = await getTodayAttendanceService(dbName, Number(staffId));
+    const { staffId, dbName } = await getStaffContext(req);
+    const data = await getTodayAttendanceService(dbName, staffId);
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message });
@@ -71,11 +77,11 @@ export const getTodayAttendance = async (req: Request, res: Response) => {
 
 export const getAttendanceHistory = async (req: Request, res: Response) => {
   try {
-    const { userId: staffId, dbName } = getCtx(req);
+    const { staffId, dbName } = await getStaffContext(req);
     const { startDate, endDate } = req.query;
     const history = await getAttendanceHistoryService(
       dbName,
-      Number(staffId),
+      staffId,
       startDate as string,
       endDate as string
     );
@@ -87,8 +93,8 @@ export const getAttendanceHistory = async (req: Request, res: Response) => {
 
 export const getStaffDashboard = async (req: Request, res: Response) => {
   try {
-    const { userId: staffId, dbName } = getCtx(req);
-    const data = await getStaffDashboardService(dbName, Number(staffId));
+    const { staffId, dbName } = await getStaffContext(req);
+    const data = await getStaffDashboardService(dbName, staffId);
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message });
@@ -97,8 +103,8 @@ export const getStaffDashboard = async (req: Request, res: Response) => {
 
 export const createMyRequest = async (req: Request, res: Response) => {
   try {
-    const { userId: staffId, dbName } = getCtx(req);
-    const data = await createAttendanceRequestService(dbName, Number(staffId), req.body);
+    const { staffId, dbName } = await getStaffContext(req);
+    const data = await createAttendanceRequestService(dbName, staffId, req.body);
     return res.status(201).json({ success: true, message: "Request submitted", data });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message });
@@ -107,8 +113,8 @@ export const createMyRequest = async (req: Request, res: Response) => {
 
 export const getMyRequests = async (req: Request, res: Response) => {
   try {
-    const { userId: staffId, dbName } = getCtx(req);
-    const data = await getMyRequestsService(dbName, Number(staffId));
+    const { staffId, dbName } = await getStaffContext(req);
+    const data = await getMyRequestsService(dbName, staffId);
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message });
@@ -117,8 +123,8 @@ export const getMyRequests = async (req: Request, res: Response) => {
 
 export const resetAttendance = async (req: Request, res: Response) => {
   try {
-    const { userId: staffId, dbName } = getCtx(req);
-    await resetAttendanceService(dbName, Number(staffId));
+    const { staffId, dbName } = await getStaffContext(req);
+    await resetAttendanceService(dbName, staffId);
     return res.status(200).json({ success: true, message: "Today's attendance reset successfully" });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message });

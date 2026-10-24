@@ -10,7 +10,7 @@ const Button = ({
   iconAfter,
   ...props
 }) => {
-  const baseClasses = "inline-flex items-center justify-center font-semibold rounded-md transition-all cursor-pointer border border-transparent gap-2 outline-none disabled:opacity-60 disabled:cursor-not-allowed";
+  const baseClasses = "inline-flex items-center justify-center font-semibold rounded-md transition-all cursor-pointer border border-transparent gap-2 outline-none disabled:opacity-60 disabled:cursor-not-allowed lowercase";
   
   const variantClasses = {
     primary: "bg-primary text-white hover:bg-primary-hover",

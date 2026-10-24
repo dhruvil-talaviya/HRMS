@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authMiddleware } from "../../middleware/auth.middleware";
+import { authMiddleware, requireAdmin } from "../../middleware/auth.middleware";
 import {
   getShifts,
   createShift,
@@ -9,6 +9,7 @@ import {
   getShiftAssignments,
   createShiftAssignment,
   updateShiftAssignment,
+  deleteShiftAssignment,
   getAttendanceSettings,
   updateAttendanceSettings,
   getHolidays,
@@ -30,42 +31,44 @@ import {
 const router = Router();
 router.use(authMiddleware);
 
+// Dashboard metrics & charts
+router.get("/dashboard/metrics", requireAdmin, getAttendanceMetrics);
+router.get("/dashboard/charts", requireAdmin, getAttendanceCharts);
 
-router.get("/dashboard/metrics", getAttendanceMetrics);
-router.get("/dashboard/charts", getAttendanceCharts);
+// Records & maintenance
+router.get("/records", requireAdmin, getAttendanceRecords);
+router.post("/records", requireAdmin, createManualAttendance);
+router.put("/records/:id", requireAdmin, updateAttendanceRecord);
+router.post("/maintenance/run", requireAdmin, runMaintenance);
 
-
-router.get("/records", getAttendanceRecords);
-router.post("/records", createManualAttendance);
-router.put("/records/:id", updateAttendanceRecord);
-router.post("/maintenance/run", runMaintenance);
-
-
+// Shifts
 router.get("/shifts", getShifts);
-router.post("/shifts", createShift);
+router.post("/shifts", requireAdmin, createShift);
 router.get("/shifts/:id", getShiftById);
-router.put("/shifts/:id", updateShift);
-router.delete("/shifts/:id", deleteShift);
+router.put("/shifts/:id", requireAdmin, updateShift);
+router.delete("/shifts/:id", requireAdmin, deleteShift);
 
-
+// Shift assignments
 router.get("/shift-assignment", getShiftAssignments);
-router.post("/shift-assignment", createShiftAssignment);
-router.put("/shift-assignment/:id", updateShiftAssignment);
+router.post("/shift-assignment", requireAdmin, createShiftAssignment);
+router.put("/shift-assignment/:id", requireAdmin, updateShiftAssignment);
+router.delete("/shift-assignment/:id", requireAdmin, deleteShiftAssignment);
 
-
+// Settings
 router.get("/settings", getAttendanceSettings);
-router.put("/settings", updateAttendanceSettings);
+router.put("/settings", requireAdmin, updateAttendanceSettings);
 
-
+// Holidays (read allowed for all authenticated tenant users, modifications admin only)
 router.get("/holidays", getHolidays);
-router.post("/holidays", createHoliday);
-router.put("/holidays/:id", updateHoliday);
-router.delete("/holidays/:id", deleteHoliday);
+router.post("/holidays", requireAdmin, createHoliday);
+router.put("/holidays/:id", requireAdmin, updateHoliday);
+router.delete("/holidays/:id", requireAdmin, deleteHoliday);
 
-
-router.get("/requests", getAttendanceRequests);
-router.get("/requests/:id", getAttendanceRequestById);
-router.put("/requests/:id/approve", approveAttendanceRequest);
-router.put("/requests/:id/reject", rejectAttendanceRequest);
+// Attendance regularization requests
+router.get("/requests", requireAdmin, getAttendanceRequests);
+router.get("/requests/:id", requireAdmin, getAttendanceRequestById);
+router.put("/requests/:id/approve", requireAdmin, approveAttendanceRequest);
+router.put("/requests/:id/reject", requireAdmin, rejectAttendanceRequest);
 
 export default router;
+

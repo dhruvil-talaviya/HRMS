@@ -1,6 +1,7 @@
-import { getTenantConnection }from "../connection/tenant.connection";
-import { Designation }from "../entity/tenant/designation.entity";
+import { getTenantConnection } from "../connection/tenant.connection";
+import { Designation } from "../entity/tenant/designation.entity";
 import { Department } from "../entity/tenant/department.entity";
+import { Staff } from "../entity/tenant/staff.entity";
 
 
 export const createDesignationService =async (dbName:string,payload:any) => {
@@ -75,13 +76,24 @@ export const deleteDesignationService =async (dbName:string,id:string) => {
       is_deleted:false
     }
   });
-  if(!designation){
-    throw new Error("Designation not found");
+
+  if (!designation) {
+    throw new Error("designation not found");
   }
+
+  const staffRepo = dataSource.getRepository(Staff);
+  const staffCount = await staffRepo.count({
+    where: { designationId: String(id) },
+  });
+  if (staffCount > 0) {
+    throw new Error("designation contains assigned employees. reassign employees first.");
+  }
+
   designation.is_deleted = true;
   await designationRepo.save(designation);
   return true;
 };
+
 
 export const getDesignationByDepartmentService = async (dbName: string,departmentId: string) => {
   const dataSource = await getTenantConnection(dbName);

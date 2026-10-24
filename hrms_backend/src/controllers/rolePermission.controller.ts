@@ -32,7 +32,7 @@
           dbName,
           id
         );
-const assignedCount = result.filter(item => item.assigned).length;
+const assignedCount = result.filter((item: any) => item.assigned).length;
       return res.status(200).json({
         success: true,
         

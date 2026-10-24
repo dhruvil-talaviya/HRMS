@@ -19,7 +19,7 @@ const Badge = ({ children, status = "neutral", className = "" }) => {
   };
 
   return (
-    <span className={`inline-flex items-center justify-center font-semibold text-xs px-2.5 py-1 rounded-full whitespace-nowrap ${variantClasses[variant]} ${className}`}>
+    <span className={`inline-flex items-center justify-center font-semibold text-xs px-2.5 py-1 rounded-full whitespace-nowrap lowercase ${variantClasses[variant]} ${className}`}>
       {children}
     </span>
   );

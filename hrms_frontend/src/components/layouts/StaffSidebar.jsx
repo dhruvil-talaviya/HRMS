@@ -20,13 +20,13 @@ const StaffSidebar = ({
   setIsMobileOpen,
 }) => {
   const menuItems = [
-    { name: "Dashboard", path: "/staff/dashboard", icon: <MdDashboard /> },
-    { name: "My Attendance", path: "/staff/attendance", icon: <MdAccessTime /> },
-    { name: "My Leave", path: "/staff/leave", icon: <MdEventBusy /> },
-    { name: "My Payroll", path: "/staff/payroll", icon: <MdPayments /> },
-    { name: "My Performance", path: "/staff/performance", icon: <MdStarBorder /> },
-    { name: "My Profile", path: "/staff/profile", icon: <MdPerson /> },
-    { name: "Calendar", path: "/staff/calendar", icon: <MdCalendarToday /> },
+    { name: "dashboard", path: "/staff/dashboard", icon: <MdDashboard /> },
+    { name: "my attendance", path: "/staff/attendance", icon: <MdAccessTime /> },
+    { name: "my leave", path: "/staff/leave", icon: <MdEventBusy /> },
+    { name: "my payroll", path: "/staff/payroll", icon: <MdPayments /> },
+    { name: "my performance", path: "/staff/performance", icon: <MdStarBorder /> },
+    { name: "my profile", path: "/staff/profile", icon: <MdPerson /> },
+    { name: "calendar", path: "/staff/calendar", icon: <MdCalendarToday /> },
   ];
 
   return (
@@ -56,8 +56,8 @@ const StaffSidebar = ({
         {/* Employee Portal badge */}
         {!isCollapsed && (
           <div className="mx-3 mt-4 mb-1 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
-              Employee Portal
+            <span className="text-xs font-semibold text-primary lowercase">
+              employee portal
             </span>
           </div>
         )}

@@ -1,17 +1,19 @@
 import { Request, Response } from "express";
-import { getMyProfileService ,updateMyProfileService} from "../../services/staff/myprofile.services";
+import { getMyProfileService, updateMyProfileService } from "../../services/staff/myprofile.services";
+import { resolveTenantStaffId } from "../../utils/staffResolver.util";
 
 export const getMyProfile = async (
   req: Request,
   res: Response
 ) => {
   try {
-    const dbName = (req as any).user.dbName;
-    const staffId = (req as any).user.userId;
+    const user = (req as any).user;
+    const dbName = user?.dbName;
+    const staffId = await resolveTenantStaffId(dbName, user?.userId, user?.email);
 
     const profile = await getMyProfileService(
       dbName,
-      Number(staffId)
+      staffId
     );
 
     return res.status(200).json({
@@ -21,9 +23,7 @@ export const getMyProfile = async (
     });
 
   } catch (error: any) {
-
     console.error("Profile Error:", error);
-
     return res.status(500).json({
       success: false,
       message: error.message,
@@ -36,15 +36,13 @@ export const updateMyProfile = async (
   res: Response
 ) => {
   try {
+    const user = (req as any).user;
+    const dbName = user?.dbName;
+    const staffId = await resolveTenantStaffId(dbName, user?.userId, user?.email);
 
-    const dbName = (req as any).user.dbName;
-    const staffId = (req as any).user.userId;
-
-    
-    
     const profile = await updateMyProfileService(
       dbName,
-      Number(staffId),
+      staffId,
       req.body
     );
 
@@ -55,13 +53,10 @@ export const updateMyProfile = async (
     });
 
   } catch (error: any) {
-
     console.error("Update Profile Error:", error);
-
     return res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };

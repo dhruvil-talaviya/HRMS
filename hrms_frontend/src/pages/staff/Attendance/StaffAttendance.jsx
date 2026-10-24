@@ -29,6 +29,18 @@ import {
 
 const fmtTime = (d) => (d ? dayjs(d).format("hh:mm A") : "—");
 
+const EmptyState = ({ message, subtitle }) => (
+  <div className="flex flex-col items-center justify-center py-16 px-6 text-center bg-slate-50/50 border border-slate-100 rounded-3xl gap-4">
+    <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-3xl">
+      <MdInbox />
+    </div>
+    <div>
+      <h4 className="text-sm font-bold text-slate-800">{message}</h4>
+      {subtitle && <p className="text-xs text-slate-400 mt-1">{subtitle}</p>}
+    </div>
+  </div>
+);
+
 const StaffAttendance = () => {
   // Tabs: "History" | "Holidays" | "Requests"
   const [activeTab, setActiveTab] = useState("History");
@@ -61,15 +73,21 @@ const StaffAttendance = () => {
       setLoading(true);
       setError(null);
 
-      const [histRes, reqRes, holRes] = await Promise.all([
+      const [histSettled, reqSettled, holSettled] = await Promise.allSettled([
         getAttendanceHistory(),
         getMyAttendanceRequests(),
         getHolidays()
       ]);
 
-      if (histRes.data?.success) setLogs(histRes.data.data || []);
-      if (reqRes.data?.success) setRequests(reqRes.data.data || []);
-      if (holRes.data?.success) setHolidays(holRes.data.data || []);
+      if (histSettled.status === "fulfilled" && histSettled.value?.data?.success) {
+        setLogs(histSettled.value.data.data || []);
+      }
+      if (reqSettled.status === "fulfilled" && reqSettled.value?.data?.success) {
+        setRequests(reqSettled.value.data.data || []);
+      }
+      if (holSettled.status === "fulfilled" && holSettled.value?.data?.success) {
+        setHolidays(holSettled.value.data.data || []);
+      }
 
       setLoading(false);
     } catch (err) {
@@ -205,18 +223,6 @@ const StaffAttendance = () => {
     setIsRequestModalOpen(true);
   };
 
-  // Reusable empty state component
-  const EmptyState = ({ message, subtitle }) => (
-    <div className="flex flex-col items-center justify-center py-16 px-6 text-center bg-slate-50/50 border border-slate-100 rounded-3xl gap-4">
-      <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-3xl">
-        <MdInbox />
-      </div>
-      <div>
-        <h4 className="text-sm font-bold text-slate-800">{message}</h4>
-        {subtitle && <p className="text-xs text-slate-400 mt-1">{subtitle}</p>}
-      </div>
-    </div>
-  );
 
   // Table columns definition for History
   const historyColumns = [
@@ -298,7 +304,7 @@ const StaffAttendance = () => {
       />
 
       {/* Tab Selectors */}
-      <div className="flex border-b border-slate-100 gap-6 text-sm font-semibold uppercase tracking-wider text-slate-400">
+      <div className="flex border-b border-slate-100 gap-6 text-sm font-semibold text-slate-400">
         {[
           { id: "History", label: "Attendance Logs" },
           { id: "Holidays", label: "Holidays Directory" },
@@ -349,7 +355,7 @@ const StaffAttendance = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {/* Status Filter */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase">Status</label>
+                <label className="text-xs font-semibold text-slate-500">Status</label>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
@@ -368,7 +374,7 @@ const StaffAttendance = () => {
 
               {/* Month Filter */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase">Month</label>
+                <label className="text-xs font-semibold text-slate-500">Month</label>
                 <select
                   value={monthFilter}
                   onChange={(e) => setMonthFilter(e.target.value)}
@@ -385,7 +391,7 @@ const StaffAttendance = () => {
 
               {/* Date Start */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase">From Date</label>
+                <label className="text-xs font-semibold text-slate-500">From Date</label>
                 <input
                   type="date"
                   value={startDateFilter}
@@ -396,7 +402,7 @@ const StaffAttendance = () => {
 
               {/* Date End */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase">To Date</label>
+                <label className="text-xs font-semibold text-slate-500">To Date</label>
                 <input
                   type="date"
                   value={endDateFilter}
@@ -425,7 +431,7 @@ const StaffAttendance = () => {
             {/* Year filter & View modes */}
             <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-400 uppercase">Year</span>
+                <span className="text-xs font-semibold text-slate-500">Year</span>
                 <select
                   value={holidayYear}
                   onChange={(e) => setHolidayYear(Number(e.target.value))}
@@ -489,7 +495,7 @@ const StaffAttendance = () => {
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-3">
                         <div className="w-10 h-10 rounded-xl bg-primary/10 flex flex-col items-center justify-center flex-shrink-0">
-                          <span className="text-[9px] font-bold text-primary uppercase leading-none">
+                          <span className="text-[10px] font-bold text-primary leading-none">
                             {dayjs(holiday.holidayDate).format("MMM")}
                           </span>
                           <span className="text-sm font-extrabold text-primary leading-none mt-0.5">
@@ -539,7 +545,7 @@ const StaffAttendance = () => {
               </div>
 
               {/* Day names */}
-              <div className="grid grid-cols-7 text-center font-bold text-[10px] text-slate-400 border-b border-slate-100 pb-2 mb-1 uppercase tracking-wider">
+              <div className="grid grid-cols-7 text-center font-semibold text-xs text-slate-400 border-b border-slate-100 pb-2 mb-1">
                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
                   <div key={day}>{day}</div>
                 ))}

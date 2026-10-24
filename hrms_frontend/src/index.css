@@ -77,3 +77,26 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-muted);
 }
+
+/* Mandatory Lowercase UI rules for buttons, labels, th, and badges */
+button,
+label,
+th,
+.badge,
+.tab-btn,
+.nav-item,
+.modal-title,
+.card-title,
+.table-header {
+  text-transform: lowercase;
+}
+
+/* Ensure user-entered form inputs, codes, and passwords are not forced lowercase */
+input,
+textarea,
+select,
+code,
+pre,
+.preserve-case {
+  text-transform: none;
+}

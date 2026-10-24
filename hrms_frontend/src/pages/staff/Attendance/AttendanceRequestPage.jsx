@@ -235,7 +235,7 @@ const AttendanceRequestPage = () => {
           </div>
 
           <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-bold text-slate-500 mb-3">
               Eligible Dates ({eligibleDates.length})
             </h3>
             <div className="flex flex-col gap-2">
@@ -250,7 +250,7 @@ const AttendanceRequestPage = () => {
                   }`}
                 >
                   <span className="text-xs font-bold">{dayjs(item.date).format("dddd, MMM DD, YYYY")}</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold self-start uppercase tracking-wider ${
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold self-start ${
                     item.type.includes("Forgot")
                       ? "bg-rose-50 text-rose-600 border border-rose-100"
                       : item.type.includes("Auto")
@@ -274,7 +274,7 @@ const AttendanceRequestPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Target Date */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-slate-600">
                   Target Date *
                 </label>
                 <select
@@ -293,7 +293,7 @@ const AttendanceRequestPage = () => {
 
               {/* Request Type */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-slate-600">
                   Request Reason / Type *
                 </label>
                 <select
@@ -313,7 +313,7 @@ const AttendanceRequestPage = () => {
             {/* Time Adjustments */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-slate-600">
                   Corrected Clock In Time
                 </label>
                 <input
@@ -325,7 +325,7 @@ const AttendanceRequestPage = () => {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-slate-600">
                   Corrected Clock Out Time
                 </label>
                 <input
@@ -339,7 +339,7 @@ const AttendanceRequestPage = () => {
 
             {/* Reason Explanation */}
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-slate-600">
                 Explanatory Reason *
               </label>
               <textarea

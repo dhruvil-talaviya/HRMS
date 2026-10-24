@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate, useParams, Link } from "react-router-dom";
+import PageHeader from "../../../components/layouts/PageHeader";
 import Button from "../../../components/common/Button";
-import { useNavigate, useParams } from "react-router-dom";
-
 import {
   getDepartments,
   getDesignations,
@@ -9,20 +9,29 @@ import {
   getDesignationByDepartment,
   getRoles,
   updateStaff,
-  getAllStaff,
+  getStaffById,
 } from "../../../services/api";
 import { toast } from "react-toastify";
+import {
+  MdArrowBack,
+  MdPerson,
+  MdWork,
+  MdLock,
+  MdSave,
+  MdVisibility,
+  MdVisibilityOff,
+} from "react-icons/md";
 
 function Addemployee() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [editId, setEditId] = useState(null);
-  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [designations, setDesignations] = useState([]);
   const [roles, setRoles] = useState([]);
-   
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -33,15 +42,74 @@ function Addemployee() {
     designationId: "",
     joiningDate: new Date().toISOString().split("T")[0],
     gender: "Male",
-    dob: "1994-01-01",
+    dob: "1995-01-01",
     address: "",
-    role: "",
+    role: "Employee",
     accessRoleId: "",
-    salary: "8000",
+    salary: "25000",
   });
 
+  useEffect(() => {
+    initForm();
+  }, [id]);
 
+  const initForm = async () => {
+    try {
+      setLoading(true);
+      const [deptRes, roleRes] = await Promise.all([
+        getDepartments(),
+        getRoles(),
+      ]);
 
+      const deptList = deptRes.data?.data || [];
+      const roleList = roleRes.data?.data || [];
+      setDepartments(deptList);
+      setRoles(roleList);
+
+      // In edit mode: load the employee directly
+      if (id) {
+        const empRes = await getStaffById(id);
+        const emp = empRes.data?.data;
+        if (emp) {
+          setFormData({
+            fullName: emp.fullName || "",
+            email: emp.email || "",
+            phone: emp.phone || "",
+            password: "",
+            departmentId: emp.departmentId || "",
+            designationId: emp.designationId || "",
+            joiningDate: emp.joiningDate ? emp.joiningDate.split("T")[0] : "",
+            gender: emp.gender || "Male",
+            dob: emp.dob ? emp.dob.split("T")[0] : "1995-01-01",
+            address: emp.address || "",
+            role: emp.role || "Employee",
+            accessRoleId: emp.accessRoleId || "",
+            salary: String(emp.salary || "25000"),
+          });
+
+          if (emp.departmentId) {
+            const desigRes = await getDesignationByDepartment(emp.departmentId);
+            setDesignations(desigRes.data?.data || []);
+          }
+        }
+      } else {
+        // In create mode: pre-select the first access role if available
+        if (roleList.length > 0) {
+          const defaultRole =
+            roleList.find((r) => r.name.toLowerCase() === "employee") || roleList[0];
+          setFormData((prev) => ({
+            ...prev,
+            accessRoleId: defaultRole.id,
+          }));
+        }
+      }
+    } catch (err) {
+      console.error("Initialization error:", err);
+      toast.error("Failed to load departments and roles");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -64,362 +132,397 @@ function Addemployee() {
 
     try {
       const response = await getDesignationByDepartment(departmentId);
-      setDesignations(response.data.data);
+      setDesignations(response.data?.data || []);
     } catch (error) {
-      console.log(error);
+      console.error("Failed to load designations:", error);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const payload = {
-      fullName: formData.fullName,
-      email: formData.email,
-      phone: formData.phone,
-      password: formData.password,
-      gender: formData.gender,
+    if (!formData.departmentId) {
+      toast.error("Please select a department");
+      return;
+    }
 
+    if (!formData.designationId) {
+      toast.error("Please select a designation");
+      return;
+    }
+
+    if (!id && (!formData.password || formData.password.length < 4)) {
+      toast.error("Password must be at least 4 characters long");
+      return;
+    }
+
+    const payload = {
+      fullName: formData.fullName.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone.trim(),
+      gender: formData.gender,
       departmentId: formData.departmentId,
       designationId: formData.designationId,
-
       dob: formData.dob,
       joiningDate: formData.joiningDate,
-      salary: Number(formData.salary),
-      role: formData.role,
-      accessRoleId: formData.accessRoleId,
-      address: formData.address,
+      salary: Number(formData.salary || 0),
+      role: formData.role.trim() || "Employee",
+      accessRoleId: formData.accessRoleId || null,
+      address: formData.address.trim() || "Address on file",
     };
-    console.log("payload", payload);
+
+    if (formData.password) {
+      payload.password = formData.password;
+    }
+
     try {
+      setSubmitting(true);
       if (id) {
         await updateStaff(id, payload);
-        toast.success("Employee Updated Successfully");
+        toast.success("Employee record updated successfully!");
       } else {
         await createStaff(payload);
-        toast.success("Employee Added Successfully");
+        toast.success("New staff account created successfully! Credentials active.");
       }
-
-      loadData();
-
-      setEditId(null);
-
       navigate("/employees");
     } catch (error) {
-      console.log(error);
+      console.error("Submit error:", error);
+      const msg =
+        error.response?.data?.message ||
+        error.response?.data?.errors?.[0]?.message ||
+        "Failed to save employee record";
+      toast.error(msg);
+    } finally {
+      setSubmitting(false);
     }
   };
 
-
-   const handleEdit = (employee) => {
-    setEditId(employee.id);
-
-    setFormData({
-      fullName: employee.fullName,
-      email: employee.email,
-      phone: employee.phone,
-      departmentId: employee.departmentId,
-      designationId: employee.designationId,
-      joiningDate: employee.joiningDate?.split("T")[0],
-      gender: employee.gender,
-      dob: employee.dob?.split("T")[0],
-      address: employee.address,
-      role: employee.role,
-      accessRoleId: employee.accessRoleId,
-      salary: employee.salary,
-    });
-
-    
-  };
-
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const emp = await getAllStaff();
-      const dept = await getDepartments();
-      const desig = await getDesignations();
-      const roleRes = await getRoles();
-
-      const formattedEmployees = emp.data.data.map((e) => ({
-        ...e,
-
-        department:
-          dept.data.data.find((d) => d.id === e.departmentId)?.name || "-",
-
-        designation:
-          desig.data.data.find((d) => d.id === e.designationId)?.title || "-",
-
-        accessRole:
-          roleRes.data.data.find((r) => r.id === e.accessRoleId)?.name || "-",
-      }));
-
-      setEmployees(formattedEmployees);
-          if (id) {
-      const employee = formattedEmployees.find(
-        (emp) => String(emp.id) === String(id)
-      );
-
-
-      if (employee) {
-        handleEdit(employee);
-
-        const response = await getDesignationByDepartment(employee.departmentId);
-        setDesignations(response.data.data);
-      }
-    }
-
-      setDepartments(dept.data.data);
-      setRoles(roleRes.data.data);
-
-      console.log("Employees =>", formattedEmployees);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-6 animate-pulse">
+        <PageHeader title={id ? "Update Staff Member" : "Register New Staff Member"} subtitle="Loading..." />
+        <div className="bg-white rounded-3xl p-8 border border-slate-100 h-96" />
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
-        {/* <h2>{editId ? "Update Employee" : "Add Employee"}</h2> */}
+    <div className="flex flex-col gap-6 max-w-5xl mx-auto pb-12">
+      <PageHeader
+        title={id ? "Update Staff Profile" : "Register New Staff Account"}
+        subtitle={
+          id
+            ? "Update details, department placement, and permissions for this staff member."
+            : "Create a staff profile with credentials so the employee can access the staff portal."
+        }
+        actions={
+          <Link to="/employees">
+            <Button variant="secondary" iconBefore={<MdArrowBack />}>
+              Back to Directory
+            </Button>
+          </Link>
+        }
+      />
 
- <div className="mb-6">
-  <h2 className="text-3xl font-bold text-gray-800">
-    {id ? "Update Employee" : "Add Employee"}
-  </h2>
-  <p className="text-sm text-gray-500 mt-1">
-    {id
-      ? "Update employee details below."
-
-      : "Fill in the details to create a new employee."}
-  </p>
-
-   <div className="w-[100px] h-1 bg-blue-900 rounded mt-2"></div>
-</div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
-          {/* Name */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text-secondary">
-              Full Name
-            </label>
-            <input
-              type="text"
-              required
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              placeholder="e.g. John Doe"
-              className="px-3.5 py-2.5 rounded-md border border-border-color bg-bg-primary text-text-primary text-sm outline-none focus:border-primary"
-            />
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        {/* Section 1: Personal & Contact Information */}
+        <div className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm flex flex-col gap-6">
+          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+              <MdPerson />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-slate-800">
+                1. Personal & Contact Information
+              </h3>
+              <p className="text-xs text-slate-400">
+                Basic biographical details and contact records
+              </p>
+            </div>
           </div>
 
-          {/* Email */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text-secondary">
-              Email Address
-            </label>
-            <input
-              type="email"
-              name="email"
-              required
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="e.g. john.d@company.com"
-              className="px-3.5 py-2.5 rounded-md border border-border-color bg-bg-primary text-text-primary text-sm outline-none focus:border-primary"
-            />
-          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {/* Full Name */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-slate-700">
+                Full Legal Name <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+                placeholder="e.g. Johnathan Doe"
+                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10 transition-all font-medium"
+              />
+            </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text-secondary">
-              Password
-            </label>
-            <input
-              type="password"
-              name="password"
-              required
-              value={formData.password}
-              disabled={!!editId}
-              onChange={handleChange}
-              placeholder="Enter Password"
-              className="px-3.5 py-2.5 rounded-md border border-border-color bg-bg-primary text-text-primary text-sm outline-none focus:border-primary"
-            />
-          </div>
+            {/* Email Address */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-slate-700">
+                Work Email Address <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="email"
+                required
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="e.g. john.doe@company.com"
+                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10 transition-all font-medium"
+              />
+              <span className="text-[11px] text-slate-400">Used as the login username</span>
+            </div>
 
-          {/* Phone */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text-secondary">
-              Phone Number
-            </label>
-            <input
-              type="tel"
-              name="phone"
-              required
-              maxLength="10"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="e.g. +91 9876543210"
-              className="px-3.5 py-2.5 rounded-md border border-border-color bg-bg-primary text-text-primary text-sm outline-none focus:border-primary"
-            />
-          </div>
+            {/* Phone Number */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-slate-700">
+                Phone Number <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="tel"
+                required
+                name="phone"
+                maxLength="15"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="e.g. 9876543210"
+                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10 transition-all font-medium"
+              />
+            </div>
 
-          {/* Gender */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text-secondary">
-              Gender
-            </label>
-            <select
-              name="gender"
-              value={formData.gender}
-              onChange={handleChange}
-              className="px-3.5 py-2.5 rounded-md border border-border-color bg-bg-primary text-text-primary text-sm outline-none focus:border-primary"
-            >
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
-          </div>
+            {/* Gender */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-slate-700">Gender</label>
+              <select
+                name="gender"
+                value={formData.gender}
+                onChange={handleChange}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none focus:border-primary focus:bg-white transition-all font-medium cursor-pointer"
+              >
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
 
-          {/* Department (IMPORTANT FIX: ID store) */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text-secondary">
-              Department
-            </label>
-            <select
-              name="departmentId"
-              value={formData.departmentId}
-              onChange={handleDepartmentChange}
-              className="px-3.5 py-2.5 rounded-md border border-border-color bg-bg-primary text-text-primary text-sm outline-none focus:border-primary"
-            >
-              <option value="">Select Department</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-          </div>
+            {/* Date of Birth */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-slate-700">Date of Birth</label>
+              <input
+                type="date"
+                name="dob"
+                value={formData.dob}
+                onChange={handleChange}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none focus:border-primary focus:bg-white transition-all font-medium"
+              />
+            </div>
 
-          {/* Designation */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text-secondary">
-              Designation
-            </label>
-
-            <select
-              name="designationId"
-              value={formData.designationId}
-              onChange={handleChange}
-              className="px-3.5 py-2.5 rounded-md border border-border-color bg-bg-primary text-text-primary text-sm outline-none focus:border-primary"
-            >
-              <option value="">Select Designation</option>
-
-              {designations.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.title}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* DOB */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text-secondary">
-              Date of Birth
-            </label>
-            <input
-              type="date"
-              name="dob"
-              value={formData.dob}
-              onChange={handleChange}
-              className="px-3.5 py-2.5 rounded-md border border-border-color bg-bg-primary text-text-primary text-sm outline-none focus:border-primary"
-            />
-          </div>
-
-          {/* Joining Date */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text-secondary">
-              Joining Date
-            </label>
-            <input
-              type="date"
-              name="joiningDate"
-              value={formData.joiningDate}
-              onChange={handleChange}
-              className="px-3.5 py-2.5 rounded-md border border-border-color bg-bg-primary text-text-primary text-sm outline-none focus:border-primary"
-            />
-          </div>
-
-          {/* Salary */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text-secondary">
-              Basic Monthly Salary ($)
-            </label>
-            <input
-              type="number"
-              name="salary"
-              value={formData.salary}
-              onChange={handleChange}
-              className="px-3.5 py-2.5 rounded-md border border-border-color bg-bg-primary text-text-primary text-sm outline-none focus:border-primary"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text-secondary">
-              Role
-            </label>
-            <input
-              type="text"
-              required
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              placeholder="e.g. John Doe"
-              className="px-3.5 py-2.5 rounded-md border border-border-color bg-bg-primary text-text-primary text-sm outline-none focus:border-primary"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text-secondary">
-              Access Role
-            </label>
-
-            <select
-              name="accessRoleId"
-              value={formData.accessRoleId}
-              onChange={handleChange}
-              className="px-3.5 py-2.5 rounded-md border border-border-color bg-bg-primary text-text-primary text-sm outline-none focus:border-primary"
-            >
-              <option value="">Select Role</option>
-
-              {roles.map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Address */}
-          <div className="col-span-1 sm:col-span-2 flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text-secondary">
-              Home Address
-            </label>
-            <textarea
-              name="address"
-              rows="2"
-              value={formData.address}
-              onChange={handleChange}
-              placeholder="Street name, City, Zipcode..."
-              className="px-3.5 py-2.5 rounded-md border border-border-color bg-bg-primary text-text-primary text-sm outline-none focus:border-primary"
-            />
+            {/* Residential Address */}
+            <div className="sm:col-span-2 flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-slate-700">Home Address</label>
+              <textarea
+                name="address"
+                rows="2"
+                value={formData.address}
+                onChange={handleChange}
+                placeholder="Street address, apartment, city, state and postal code..."
+                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10 transition-all font-medium"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Buttons */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-border-color mt-6">
+        {/* Section 2: Employment & Placement */}
+        <div className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm flex flex-col gap-6">
+          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
+              <MdWork />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-slate-800">
+                2. Employment & Department Placement
+              </h3>
+              <p className="text-xs text-slate-400">
+                Job classification, hierarchy, and salary configuration
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {/* Department */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-slate-700">
+                Department <span className="text-rose-500">*</span>
+              </label>
+              <select
+                name="departmentId"
+                required
+                value={formData.departmentId}
+                onChange={handleDepartmentChange}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none focus:border-primary focus:bg-white transition-all font-medium cursor-pointer"
+              >
+                <option value="">— Select Department —</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Designation */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-slate-700">
+                Designation <span className="text-rose-500">*</span>
+              </label>
+              <select
+                name="designationId"
+                required
+                value={formData.designationId}
+                onChange={handleChange}
+                disabled={!formData.departmentId}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none focus:border-primary focus:bg-white transition-all font-medium cursor-pointer disabled:opacity-50"
+              >
+                <option value="">
+                  {formData.departmentId
+                    ? "— Select Designation —"
+                    : "Select a department first"}
+                </option>
+                {designations.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Job Title / Role Tag */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-slate-700">
+                Job Title / Role Profile <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                placeholder="e.g. Full Stack Engineer / UI Designer"
+                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10 transition-all font-medium"
+              />
+            </div>
+
+            {/* Joining Date */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-slate-700">
+                Joining Date <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="date"
+                required
+                name="joiningDate"
+                value={formData.joiningDate}
+                onChange={handleChange}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none focus:border-primary focus:bg-white transition-all font-medium"
+              />
+            </div>
+
+            {/* Basic Salary */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-slate-700">
+                Monthly Basic Salary (₹) <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="number"
+                required
+                name="salary"
+                min="0"
+                value={formData.salary}
+                onChange={handleChange}
+                placeholder="25000"
+                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10 transition-all font-medium"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Section 3: Account Credentials & System Permissions */}
+        <div className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 shadow-sm flex flex-col gap-6">
+          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+              <MdLock />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-slate-800">
+                3. Portal Access & Security Credentials
+              </h3>
+              <p className="text-xs text-slate-400">
+                Configure login credentials and user access permissions
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {/* Access Role */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-slate-700">
+                System Access Role <span className="text-rose-500">*</span>
+              </label>
+              <select
+                name="accessRoleId"
+                value={formData.accessRoleId}
+                onChange={handleChange}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none focus:border-primary focus:bg-white transition-all font-medium cursor-pointer"
+              >
+                <option value="">— Default Employee Role —</option>
+                {roles.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+              <span className="text-[11px] text-slate-400">
+                Determines which modules and permissions this staff member has
+              </span>
+            </div>
+
+            {/* Password */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-slate-700">
+                {id ? "Change Account Password (Optional)" : "Initial Portal Password"}
+                {!id && <span className="text-rose-500"> *</span>}
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  required={!id}
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder={id ? "Leave empty to keep existing password" : "e.g. Employee@2026"}
+                  className="w-full px-4 pr-11 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10 transition-all font-medium"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((p) => !p)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  {showPassword ? <MdVisibilityOff size={18} /> : <MdVisibility size={18} />}
+                </button>
+              </div>
+              <span className="text-[11px] text-slate-400">
+                {id
+                  ? "Enter a new password only if you wish to reset it."
+                  : "Employee will use this password to sign in to the portal."}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Controls */}
+        <div className="flex items-center justify-end gap-3 pt-4">
           <Button
             variant="secondary"
             type="button"
@@ -427,9 +530,17 @@ function Addemployee() {
           >
             Cancel
           </Button>
-
-          <Button type="submit" variant="primary">
-            {id ? "Update Employee" : "Register Employee"}
+          <Button
+            type="submit"
+            variant="primary"
+            iconBefore={<MdSave className="text-lg" />}
+            disabled={submitting}
+          >
+            {submitting
+              ? "Saving Record..."
+              : id
+              ? "Save Changes"
+              : "Register Employee"}
           </Button>
         </div>
       </form>

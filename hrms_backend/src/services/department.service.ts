@@ -64,21 +64,30 @@ export const deleteDepartmentService = async (dbName: string, id: string) => {
         throw new Error("Department not found");
     }
 
-    const designationCount =await designationRepo.count({
+    const designationCount = await designationRepo.count({
       where: {
-        department: {
-      id: id,
-    },
-        is_deleted: false
-      }
+        department: { id },
+        is_deleted: false,
+      },
     });
-  if (designationCount > 0) {
-    throw new Error("Department contains designations. Delete designations first.");
-  }
+    if (designationCount > 0) {
+      throw new Error("department contains designations. delete or reassign designations first.");
+    }
+
+    const staffRepo = dataSource.getRepository(Staff);
+    const staffCount = await staffRepo.count({
+      where: { departmentId: String(id) },
+    });
+    if (staffCount > 0) {
+      throw new Error("department contains assigned employees. reassign employees first.");
+    }
+
+
     department.is_deleted = true;
     await departmentRepo.save(department);
     return true;
 };
+
 
 export const getDepartmentHeadOptionsService = async (
   dbName: string,

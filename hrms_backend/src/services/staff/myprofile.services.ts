@@ -5,29 +5,26 @@ export const getMyProfileService = async (
   dbName: string,
   staffId: number
 ) => {
-
   const dataSource = await getTenantConnection(dbName);
-
   const staffRepo = dataSource.getRepository(Staff);
 
   const staff = await staffRepo.findOne({
-    where: {
-      id: staffId,
-    },
+    where: { id: staffId },
     relations: {
-    department: true,
-  designation: true,
-  accessRole: true
+      department: true,
+      designation: true,
+      accessRole: true,
     },
   });
 
   if (!staff) {
-    throw new Error("Staff not found");
+    throw new Error("staff not found");
   }
 
-  return staff;
+  const clean = { ...staff };
+  delete (clean as any).password;
+  return clean;
 };
-
 
 export const updateMyProfileService = async (
   dbName: string,
@@ -35,23 +32,23 @@ export const updateMyProfileService = async (
   data: any
 ) => {
   const dataSource = await getTenantConnection(dbName);
-
   const staffRepo = dataSource.getRepository(Staff);
 
   const staff = await staffRepo.findOne({
-    where: {
-      id: staffId,
-    },
+    where: { id: staffId },
   });
 
   if (!staff) {
-    throw new Error("Staff not found");
+    throw new Error("staff not found");
   }
 
-  staff.fullName = data.name;
-  staff.email = data.email;
-  staff.phone = data.phone;
-  staff.address = data.address;
+  if (data.name !== undefined) staff.fullName = data.name;
+  if (data.fullName !== undefined) staff.fullName = data.fullName;
+  if (data.phone !== undefined) staff.phone = data.phone;
+  if (data.address !== undefined) staff.address = data.address;
 
-  return await staffRepo.save(staff);
+  const saved = await staffRepo.save(staff);
+  const clean = { ...saved };
+  delete (clean as any).password;
+  return clean;
 };

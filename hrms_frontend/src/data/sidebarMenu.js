@@ -1,36 +1,36 @@
 export const sidebarMenu = [
   {
-    label: "Dashboard",
+    label: "dashboard",
     path: "/dashboard",
     permission: "dashboard.view",
     icon: "🏠",
   },
   {
-    label: "Staff",
+    label: "staff",
     path: "/staff",
     permission: "staff.view",
     icon: "👨‍💼",
   },
   {
-    label: "Department",
+    label: "department",
     path: "/department",
     permission: "department.view",
     icon: "🏢",
   },
   {
-    label: "Designation",
+    label: "designation",
     path: "/designation",
     permission: "designation.view",
     icon: "📋",
   },
   {
-    label: "Attendance",
+    label: "attendance",
     path: "/attendance",
     permission: "attendance.view",
     icon: "🕒",
   },
   {
-    label: "Leave",
+    label: "leave",
     path: "/leave",
     permission: "leave.view",
     icon: "📅",

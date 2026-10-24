@@ -135,6 +135,15 @@ export const updateShiftAssignmentService = async (dbName: string, id: string, d
   return await repo.save(assignment);
 };
 
+export const deleteShiftAssignmentService = async (dbName: string, id: string) => {
+  const ds = await getTenantConnection(dbName);
+  const repo = ds.getRepository(ShiftAssignment);
+  const assignment = await repo.findOne({ where: { id } });
+  if (!assignment) throw new Error("Shift assignment not found");
+  await repo.delete(id);
+};
+
+
 
 export const getAttendanceSettingsService = async (dbName: string) => {
   const ds = await getTenantConnection(dbName);

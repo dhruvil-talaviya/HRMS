@@ -497,6 +497,36 @@ const Settings = () => {
                 </div>
               </div>
             </div>
+
+            <div className="mt-8">
+              <h4 className="text-sm font-bold text-text-primary mb-3">
+                Tax Brackets (Slabs)
+              </h4>
+              <div className="bg-bg-primary border border-border-color rounded-lg p-4 shadow-sm">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-border-color text-text-secondary">
+                      <th className="pb-2">Income Slab Range</th>
+                      <th className="pb-2">Tax Rate (%)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-color">
+                    {payrollPolicies.taxSlab?.map((slab, idx) => (
+                      <tr key={idx} className="text-text-primary">
+                        <td className="py-2.5 font-medium">
+                          {slab.upTo
+                            ? `Up to $${slab.upTo.toLocaleString()}`
+                            : `Above $${slab.above?.toLocaleString()}`}
+                        </td>
+                        <td className="py-2.5 font-semibold text-blue-600">
+                          {slab.rate}%
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 

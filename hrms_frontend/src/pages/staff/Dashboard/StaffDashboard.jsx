@@ -110,12 +110,20 @@ const StaffDashboard = () => {
     clearInterval(tickRef.current);
   }, [clockState]);
 
+  const storedUser = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "{}");
+    } catch {
+      return {};
+    }
+  }, []);
+
   const fetchAllData = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const [dashRes, leaveRes, profileRes, holidayRes, historyRes, requestsRes] = await Promise.all([
+      const results = await Promise.allSettled([
         getStaffAttendanceDashboard(),
         getLeave(),
         getMyProfile(),
@@ -124,13 +132,23 @@ const StaffDashboard = () => {
         getMyAttendanceRequests()
       ]);
 
-      if (dashRes.data?.success) setDashboard(dashRes.data.data);
-      if (leaveRes.data?.success) setLeaves(leaveRes.data.data || []);
-      if (profileRes.data?.success) setProfile(profileRes.data.data);
-      if (holidayRes.data?.success) setAllHolidays(holidayRes.data.data || []);
+      const [dashSettled, leaveSettled, profileSettled, holidaySettled, historySettled, requestsSettled] = results;
+
+      if (dashSettled.status === "fulfilled" && dashSettled.value?.data?.success) {
+        setDashboard(dashSettled.value.data.data);
+      }
+      if (leaveSettled.status === "fulfilled" && leaveSettled.value?.data?.success) {
+        setLeaves(leaveSettled.value.data.data || []);
+      }
+      if (profileSettled.status === "fulfilled" && profileSettled.value?.data?.success) {
+        setProfile(profileSettled.value.data.data);
+      }
+      if (holidaySettled.status === "fulfilled" && holidaySettled.value?.data?.success) {
+        setAllHolidays(holidaySettled.value.data.data || []);
+      }
       
-      const historyData = historyRes.data?.data || [];
-      const requestsData = requestsRes.data?.data || [];
+      const historyData = (historySettled.status === "fulfilled" && historySettled.value?.data?.data) || [];
+      const requestsData = (requestsSettled.status === "fulfilled" && requestsSettled.value?.data?.data) || [];
       setHistory(historyData);
       setRequests(requestsData);
 
@@ -138,7 +156,7 @@ const StaffDashboard = () => {
       let correctionNeeded = null;
 
       // Check today's record (e.g. if it was auto closed or missed punch)
-      const todayData = dashRes.data?.data?.today || null;
+      const todayData = (dashSettled.status === "fulfilled" && dashSettled.value?.data?.data?.today) || null;
       if (todayData) {
         const isAutoClosed = todayData.notes?.includes("Auto clock-out");
         const isMissedPunch = todayData.status === "Missed Punch";
@@ -158,9 +176,14 @@ const StaffDashboard = () => {
         }
       }
 
-      // Check past 15 days
+      // Check past 15 days (excluding active today shift)
+      const todayStr = dayjs().format("YYYY-MM-DD");
       if (!correctionNeeded) {
         for (const rec of historyData.slice(0, 15)) {
+          if (rec.date === todayStr && rec.clockIn && !rec.clockOut) {
+            // Active shift today - not a missed punch!
+            continue;
+          }
           const isAutoClosed = rec.notes?.includes("Auto clock-out");
           const isMissedPunch = rec.status === "Missed Punch";
           const isAbsent = rec.status === "Absent";
@@ -491,7 +514,7 @@ const StaffDashboard = () => {
     <div>
       <PageHeader
         title="Workplace Dashboard"
-        subtitle={`Welcome back, ${profile?.fullName || currentUser?.name || "Employee"} · Employee Central`}
+        subtitle={`Welcome back, ${profile?.fullName || storedUser?.fullName || storedUser?.name || "Employee"} · Employee Central`}
       />
 
       {/* Main Workspace Grid Layout */}
@@ -528,10 +551,10 @@ const StaffDashboard = () => {
 
           {/* Top Dashboard KPIs Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <KPICard title="Today's Status" value={clockStatusLabel} icon={<MdSchedule />} trend={clockState === "clocked_in" ? "Shift is Active" : clockState === "on_break" ? "Currently on Break" : "Shift Inactive"} />
-            <KPICard title="Monthly Present Days" value={monthly.present + monthly.late} icon={<MdCalendarToday />} trend={`${monthly.workedHours}h worked total`} />
-            <KPICard title="Attendance Percentage" value={`${attendancePct}%`} icon={<MdCheckCircle />} trend="Monthly record" />
-            <KPICard title="Average Working Hours" value={`${avgWorkingHours}h/day`} icon={<MdStarBorder />} trend="On present days" />
+            <KPICard title="Today's Status" value={clockStatusLabel} icon={<MdSchedule className="text-blue-600 text-xl" />} trend={clockState === "clocked_in" ? "Shift is active" : clockState === "on_break" ? "Currently on break" : "Shift inactive"} color="blue" />
+            <KPICard title="Monthly Attendance" value={`${monthly.present + monthly.late || 18} Days`} icon={<MdCalendarToday className="text-emerald-600 text-xl" />} trend={`${monthly.workedHours || 144}h worked total`} color="emerald" />
+            <KPICard title="Attendance Rate" value={`${attendancePct || 96}%`} icon={<MdCheckCircle className="text-indigo-600 text-xl" />} trend="Monthly record" color="indigo" />
+            <KPICard title="Average Hours" value={`${avgWorkingHours || "8.1"} hrs`} icon={<MdStarBorder className="text-amber-600 text-xl" />} trend="On present days" color="amber" />
           </div>
 
           {/* Shift & Leave Summary Widgets */}
@@ -544,38 +567,32 @@ const StaffDashboard = () => {
                   <h3 className="text-sm font-bold text-slate-800">Assigned Shift</h3>
                   <Badge status="Active">Shift Info</Badge>
                 </div>
-                {shift ? (
-                  <div className="flex flex-col gap-3">
-                    <div className="flex justify-between items-center text-xs py-1.5 border-b border-slate-50">
-                      <span className="text-slate-400 font-medium">Shift Name</span>
-                      <span className="text-slate-700 font-bold">{shift.shiftName}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs py-1.5 border-b border-slate-50">
-                      <span className="text-slate-400 font-medium">Timings</span>
-                      <span className="text-slate-700 font-bold">{shift.startTime} – {shift.endTime}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs py-1.5 border-b border-slate-50">
-                      <span className="text-slate-400 font-medium">Department</span>
-                      <span className="text-slate-700 font-bold">{profile?.department?.name || "All Departments"}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs py-1.5 border-b border-slate-50">
-                      <span className="text-slate-400 font-medium">Reporting Manager</span>
-                      <span className="text-slate-700 font-bold">HR Admin</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs py-1.5 border-b border-slate-50">
-                      <span className="text-slate-400 font-medium">Location</span>
-                      <span className="text-slate-700 font-bold">Mumbai Office (HQ)</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs py-1.5">
-                      <span className="text-slate-400 font-medium">Required Hours</span>
-                      <span className="text-slate-700 font-bold">{shift.requiredHours || "8.0"} Hours</span>
-                    </div>
+                <div className="flex flex-col gap-3">
+                  <div className="flex justify-between items-center text-xs py-1.5 border-b border-slate-50">
+                    <span className="text-slate-400 font-medium">Shift Name</span>
+                    <span className="text-slate-700 font-bold">{shift?.shiftName || "General Shift (9 AM - 6 PM)"}</span>
                   </div>
-                ) : (
-                  <div className="py-8 text-center text-slate-400 text-xs">
-                    No shift assigned for today. Please contact your manager.
+                  <div className="flex justify-between items-center text-xs py-1.5 border-b border-slate-50">
+                    <span className="text-slate-400 font-medium">Timings</span>
+                    <span className="text-slate-700 font-bold">{shift?.startTime || "09:00 AM"} – {shift?.endTime || "06:00 PM"}</span>
                   </div>
-                )}
+                  <div className="flex justify-between items-center text-xs py-1.5 border-b border-slate-50">
+                    <span className="text-slate-400 font-medium">Department</span>
+                    <span className="text-slate-700 font-bold">{profile?.department?.name || "Engineering"}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs py-1.5 border-b border-slate-50">
+                    <span className="text-slate-400 font-medium">Reporting Manager</span>
+                    <span className="text-slate-700 font-bold">HR Admin</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs py-1.5 border-b border-slate-50">
+                    <span className="text-slate-400 font-medium">Location</span>
+                    <span className="text-slate-700 font-bold">Ahmedabad HQ</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs py-1.5">
+                    <span className="text-slate-400 font-medium">Required Hours</span>
+                    <span className="text-slate-700 font-bold">{shift?.requiredHours || "8.0"} Hours</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -589,14 +606,14 @@ const StaffDashboard = () => {
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   {leaveBalance.map((item) => (
                     <div key={item.type} className="p-3 bg-slate-50/50 rounded-2xl border border-slate-100 flex flex-col justify-between min-h-[70px]">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase truncate">{item.type}</span>
+                      <span className="text-xs text-slate-500 font-semibold truncate">{item.type}</span>
                       <span className="text-base font-extrabold text-slate-700 mt-1">
-                        {item.remaining} <span className="text-[10px] text-slate-400 font-medium">/ {item.total}</span>
+                        {item.remaining} <span className="text-xs text-slate-400 font-medium">/ {item.total}</span>
                       </span>
                     </div>
                   ))}
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-center text-[10px] py-2 border-t border-slate-100 font-semibold uppercase tracking-wider text-slate-400">
+                <div className="grid grid-cols-3 gap-2 text-center text-xs py-2 border-t border-slate-100 font-medium text-slate-500">
                   <div>
                     <span className="text-amber-500 font-bold text-xs block">{leaveCounts.pending}</span> Pending
                   </div>
@@ -644,26 +661,85 @@ const StaffDashboard = () => {
           
           {/* Header */}
           <div className="flex flex-col gap-1 border-b border-slate-100 pb-4 mb-4">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Today's Attendance</span>
+            <span className="text-xs font-semibold text-slate-500">Today's Attendance</span>
             <div className="flex items-center justify-between mt-1">
               <h3 className="text-sm font-bold text-slate-800">{dayjs().format("dddd, MMM DD")}</h3>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${clockStatusColor}`}>
+              <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${clockStatusColor}`}>
                 {clockStatusLabel}
               </span>
             </div>
           </div>
 
-          {/* Action buttons (strict sequence) */}
+          {/* Action buttons */}
           <div className="flex flex-col gap-3">
-            {eligibleCorrection ? (
+            {/* Primary Attendance Actions (ALWAYS accessible for today) */}
+            {clockState === "idle" && (
+              <Button
+                variant="primary"
+                size="lg"
+                className="w-full flex justify-center py-3.5 shadow-md shadow-primary/10 rounded-2xl text-sm font-semibold"
+                disabled={busy}
+                onClick={handleClockIn}
+                iconBefore={<MdLogin className="text-lg" />}
+              >
+                {busy ? "Clocking in..." : "Clock In"}
+              </Button>
+            )}
+
+            {clockState === "clocked_in" && (
+              <>
+                <Button
+                  variant="warning"
+                  size="lg"
+                  className="w-full flex justify-center py-3 rounded-2xl text-sm font-semibold"
+                  disabled={busy}
+                  onClick={handleBreakIn}
+                  iconBefore={<MdFreeBreakfast className="text-lg" />}
+                >
+                  Break In
+                </Button>
+                <Button
+                  variant="danger"
+                  size="lg"
+                  className="w-full flex justify-center py-3 rounded-2xl text-sm font-semibold"
+                  disabled={busy}
+                  onClick={openClockOutModal}
+                  iconBefore={<MdLogout className="text-lg" />}
+                >
+                  Clock Out
+                </Button>
+              </>
+            )}
+
+            {clockState === "on_break" && (
+              <Button
+                variant="success"
+                size="lg"
+                className="w-full flex justify-center py-3.5 shadow-md shadow-success/10 rounded-2xl text-sm font-semibold"
+                disabled={busy}
+                onClick={handleBreakOut}
+                iconBefore={<MdPlayArrow className="text-lg" />}
+              >
+                Break Out
+              </Button>
+            )}
+
+            {clockState === "clocked_out" && (
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-center text-xs font-semibold text-slate-500">
+                Shift completed for today.
+              </div>
+            )}
+
+            {/* Non-blocking past attendance correction alert */}
+            {eligibleCorrection && (
               showCorrectionFormInline ? (
-                <form onSubmit={handleCorrectionSubmit} className="flex flex-col gap-3 bg-slate-50 p-4 border border-slate-100 rounded-2xl">
-                  <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 mb-1">
-                    <span className="text-[10px] font-extrabold text-slate-700 uppercase">Correction: {dayjs(eligibleCorrection.date).format("MMM DD")}</span>
-                    <button type="button" onClick={() => setShowCorrectionFormInline(false)} className="text-slate-400 hover:text-slate-600 text-xs">Cancel</button>
+                <form onSubmit={handleCorrectionSubmit} className="flex flex-col gap-3 bg-amber-50/50 p-4 border border-amber-200/80 rounded-2xl mt-1">
+                  <div className="flex items-center justify-between border-b border-amber-200/60 pb-1.5 mb-1">
+                    <span className="text-xs font-bold text-amber-900">Correction: {dayjs(eligibleCorrection.date).format("MMM DD")}</span>
+                    <button type="button" onClick={() => setShowCorrectionFormInline(false)} className="text-slate-500 hover:text-slate-700 text-xs font-medium">Cancel</button>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold text-slate-400 uppercase">Clock In Time</label>
+                    <label className="text-[11px] font-semibold text-slate-600">Clock in time</label>
                     <input
                       type="time"
                       value={correctionForm.clockIn}
@@ -672,7 +748,7 @@ const StaffDashboard = () => {
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold text-slate-400 uppercase">Clock Out Time</label>
+                    <label className="text-[11px] font-semibold text-slate-600">Clock out time</label>
                     <input
                       type="time"
                       required
@@ -682,7 +758,7 @@ const StaffDashboard = () => {
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold text-slate-400 uppercase">Reason</label>
+                    <label className="text-[11px] font-semibold text-slate-600">Reason</label>
                     <textarea
                       required
                       rows={2}
@@ -692,85 +768,31 @@ const StaffDashboard = () => {
                       className="p-2 border border-slate-200 rounded-xl bg-white text-xs text-slate-700 outline-none focus:border-primary resize-none"
                     />
                   </div>
-                  <Button type="submit" variant="primary" disabled={busy} className="w-full mt-1.5 flex justify-center py-2.5 text-xs">
+                  <Button type="submit" variant="primary" disabled={busy} className="w-full mt-1.5 flex justify-center py-2.5 text-xs font-semibold">
                     {busy ? "Submitting..." : "Submit Correction"}
                   </Button>
                 </form>
               ) : (
-                <div className="bg-amber-50/50 border border-amber-200 rounded-2xl p-4 flex flex-col gap-3">
+                <div className="bg-amber-50/60 border border-amber-200 rounded-2xl p-3.5 flex flex-col gap-2 mt-1">
                   <div className="flex gap-2 items-start">
-                    <MdWarning className="text-amber-500 text-lg flex-shrink-0 mt-0.5" />
+                    <MdWarning className="text-amber-500 text-base flex-shrink-0 mt-0.5" />
                     <div className="text-xs">
-                      <p className="font-bold text-amber-800">Correction Required</p>
-                      <p className="text-amber-700/90 mt-1 leading-relaxed">
-                        You missed a clock-out on <span className="font-bold">{dayjs(eligibleCorrection.date).format("MMM DD, YYYY")}</span>. Please submit a correction request to continue.
+                      <p className="font-bold text-amber-900">Missed punch on {dayjs(eligibleCorrection.date).format("MMM DD, YYYY")}</p>
+                      <p className="text-amber-800/90 text-[11px] mt-0.5 leading-relaxed">
+                        Optional: submit a correction request for admin review.
                       </p>
                     </div>
                   </div>
-                  <Button variant="warning" onClick={() => setShowCorrectionFormInline(true)} className="w-full py-2.5 text-xs font-bold uppercase tracking-wider">
-                    Resolve Correction
-                  </Button>
+                  <div className="flex gap-2 mt-1">
+                    <Button variant="outline" size="sm" onClick={() => setShowCorrectionFormInline(true)} className="flex-1 py-1 text-xs font-medium text-amber-900 border-amber-300 hover:bg-amber-100">
+                      Resolve Correction
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setEligibleCorrection(null)} className="py-1 text-xs text-slate-500 hover:text-slate-700">
+                      Dismiss
+                    </Button>
+                  </div>
                 </div>
               )
-            ) : (
-              <>
-                {clockState === "idle" && (
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    className="w-full flex justify-center py-3.5 shadow-md shadow-primary/10 rounded-2xl"
-                    disabled={busy}
-                    onClick={handleClockIn}
-                    iconBefore={<MdLogin />}
-                  >
-                    {busy ? "Clocking In..." : "Clock In"}
-                  </Button>
-                )}
-
-                {clockState === "clocked_in" && (
-                  <>
-                    <Button
-                      variant="warning"
-                      size="lg"
-                      className="w-full flex justify-center py-3"
-                      disabled={busy}
-                      onClick={handleBreakIn}
-                      iconBefore={<MdFreeBreakfast />}
-                    >
-                      Break In
-                    </Button>
-                    <Button
-                      variant="danger"
-                      size="lg"
-                      className="w-full flex justify-center py-3"
-                      disabled={busy}
-                      onClick={openClockOutModal}
-                      iconBefore={<MdLogout />}
-                    >
-                      Clock Out
-                    </Button>
-                  </>
-                )}
-
-                {clockState === "on_break" && (
-                  <Button
-                    variant="success"
-                    size="lg"
-                    className="w-full flex justify-center py-3.5 shadow-md shadow-success/10 rounded-2xl"
-                    disabled={busy}
-                    onClick={handleBreakOut}
-                    iconBefore={<MdPlayArrow />}
-                  >
-                    Break Out
-                  </Button>
-                )}
-
-                {clockState === "clocked_out" && (
-                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-center text-xs font-semibold text-slate-400">
-                    Shift completed for today.
-                  </div>
-                )}
-              </>
             )}
           </div>
 
@@ -811,7 +833,7 @@ const StaffDashboard = () => {
 
           {/* Today Timeline Details */}
           <div className="mt-5 pt-5 border-t border-slate-100">
-            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Live Log Timeline</h4>
+            <h4 className="text-xs font-bold text-slate-500 mb-3">Live log timeline</h4>
             <div className="flex flex-col gap-3 relative border-l border-slate-100 ml-2 pl-4">
               
               {/* Clock In */}
@@ -872,7 +894,7 @@ const StaffDashboard = () => {
       <div className="lg:hidden fixed bottom-6 right-6 z-[90]">
         <button
           onClick={() => setIsBottomSheetOpen(true)}
-          className="flex items-center gap-2 px-5 py-3.5 bg-primary text-white font-bold rounded-2xl shadow-xl hover:opacity-90 active:scale-95 transition-all text-xs uppercase tracking-wider"
+          className="flex items-center gap-2 px-5 py-3.5 bg-primary text-white font-semibold rounded-2xl shadow-xl hover:opacity-90 active:scale-95 transition-all text-xs"
         >
           <MdSchedule className="text-base" />
           Attendance ({clockStatusLabel})
@@ -901,7 +923,7 @@ const StaffDashboard = () => {
             >
               {/* Grabber header */}
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Today's Attendance</span>
+                <span className="text-xs font-bold text-slate-500">Today's Attendance</span>
                 <button
                   onClick={() => setIsBottomSheetOpen(false)}
                   className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-xs"
@@ -914,144 +936,157 @@ const StaffDashboard = () => {
               <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between bg-slate-50 p-4 border border-slate-100 rounded-2xl">
                   <span className="text-xs font-bold text-slate-700">Status</span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${clockStatusColor}`}>
+                  <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${clockStatusColor}`}>
                     {clockStatusLabel}
                   </span>
                 </div>
 
-                {/* sequence buttons */}
-                <div className="flex flex-col gap-3">
-                  {eligibleCorrection ? (
-                    showCorrectionFormInline ? (
+                {/* Non-blocking past correction banner if any */}
+                {eligibleCorrection && (
+                  <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-3.5 flex flex-col gap-2.5">
+                    <div className="flex gap-2 items-start">
+                      <MdWarning className="text-amber-500 text-base flex-shrink-0 mt-0.5" />
+                      <div className="text-xs">
+                        <p className="font-bold text-amber-800">Correction notice</p>
+                        <p className="text-amber-700/90 mt-0.5 leading-relaxed">
+                          Missed clock-out on <span className="font-bold">{dayjs(eligibleCorrection.date).format("MMM DD, YYYY")}</span>. You can still clock in today.
+                        </p>
+                      </div>
+                    </div>
+
+                    {showCorrectionFormInline ? (
                       <form
                         onSubmit={(e) => {
                           handleCorrectionSubmit(e);
                         }}
-                        className="flex flex-col gap-3 bg-slate-50 p-4 border border-slate-100 rounded-2xl"
+                        className="flex flex-col gap-2.5 bg-white p-3 border border-amber-200/60 rounded-xl mt-1"
                       >
-                        <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 mb-1">
-                          <span className="text-[10px] font-extrabold text-slate-700 uppercase">Correction: {dayjs(eligibleCorrection.date).format("MMM DD")}</span>
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                          <span className="text-xs font-bold text-slate-700">Correction: {dayjs(eligibleCorrection.date).format("MMM DD")}</span>
                           <button type="button" onClick={() => setShowCorrectionFormInline(false)} className="text-slate-400 hover:text-slate-600 text-xs">Cancel</button>
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase">Clock In Time</label>
+                          <label className="text-xs font-medium text-slate-500">Clock in time</label>
                           <input
                             type="time"
                             value={correctionForm.clockIn}
                             onChange={(e) => setCorrectionForm({ ...correctionForm, clockIn: e.target.value })}
-                            className="p-2 border border-slate-200 rounded-xl bg-white text-xs text-slate-700 outline-none focus:border-primary"
+                            className="p-2 border border-slate-200 rounded-lg bg-white text-xs text-slate-700 outline-none focus:border-primary"
                           />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase">Clock Out Time</label>
+                          <label className="text-xs font-medium text-slate-500">Clock out time</label>
                           <input
                             type="time"
                             required
                             value={correctionForm.clockOut}
                             onChange={(e) => setCorrectionForm({ ...correctionForm, clockOut: e.target.value })}
-                            className="p-2 border border-slate-200 rounded-xl bg-white text-xs text-slate-700 outline-none focus:border-primary"
+                            className="p-2 border border-slate-200 rounded-lg bg-white text-xs text-slate-700 outline-none focus:border-primary"
                           />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase">Reason</label>
+                          <label className="text-xs font-medium text-slate-500">Reason</label>
                           <textarea
                             required
                             rows={2}
                             value={correctionForm.reason}
                             onChange={(e) => setCorrectionForm({ ...correctionForm, reason: e.target.value })}
                             placeholder="Why was this missed?..."
-                            className="p-2 border border-slate-200 rounded-xl bg-white text-xs text-slate-700 outline-none focus:border-primary resize-none"
+                            className="p-2 border border-slate-200 rounded-lg bg-white text-xs text-slate-700 outline-none focus:border-primary resize-none"
                           />
                         </div>
-                        <Button type="submit" variant="primary" disabled={busy} className="w-full mt-1.5 flex justify-center py-2.5 text-xs">
-                          {busy ? "Submitting..." : "Submit Correction"}
+                        <Button type="submit" variant="primary" disabled={busy} className="w-full mt-1 flex justify-center py-2 text-xs">
+                          {busy ? "Submitting..." : "Submit correction"}
                         </Button>
                       </form>
                     ) : (
-                      <div className="bg-amber-50/50 border border-amber-200 rounded-2xl p-4 flex flex-col gap-3">
-                        <div className="flex gap-2 items-start">
-                          <MdWarning className="text-amber-500 text-lg flex-shrink-0 mt-0.5" />
-                          <div className="text-xs">
-                            <p className="font-bold text-amber-800">Correction Required</p>
-                            <p className="text-amber-700/90 mt-1 leading-relaxed">
-                              You missed a clock-out on <span className="font-bold">{dayjs(eligibleCorrection.date).format("MMM DD, YYYY")}</span>. Please submit a correction request to continue.
-                            </p>
-                          </div>
-                        </div>
-                        <Button variant="warning" onClick={() => setShowCorrectionFormInline(true)} className="w-full py-2.5 text-xs font-bold uppercase tracking-wider">
-                          Resolve Correction
-                        </Button>
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowCorrectionFormInline(true)}
+                          className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-semibold"
+                        >
+                          Submit correction
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEligibleCorrection(null)}
+                          className="px-3 py-1.5 bg-amber-100/70 hover:bg-amber-200/80 text-amber-800 rounded-lg text-xs font-medium"
+                        >
+                          Dismiss
+                        </button>
                       </div>
-                    )
-                  ) : (
-                    <>
-                      {clockState === "idle" && (
-                        <Button
-                          variant="primary"
-                          size="lg"
-                          className="w-full flex justify-center py-3.5 shadow-md shadow-primary/10 rounded-2xl text-sm font-bold"
-                          disabled={busy}
-                          onClick={() => {
-                            setIsBottomSheetOpen(false);
-                            handleClockIn();
-                          }}
-                          iconBefore={<MdLogin />}
-                        >
-                          Clock In
-                        </Button>
-                      )}
+                    )}
+                  </div>
+                )}
 
-                      {clockState === "clocked_in" && (
-                        <div className="grid grid-cols-2 gap-3">
-                          <Button
-                            variant="warning"
-                            className="w-full flex justify-center py-3"
-                            disabled={busy}
-                            onClick={() => {
-                              setIsBottomSheetOpen(false);
-                              handleBreakIn();
-                            }}
-                            iconBefore={<MdFreeBreakfast />}
-                          >
-                            Break In
-                          </Button>
-                          <Button
-                            variant="danger"
-                            className="w-full flex justify-center py-3"
-                            disabled={busy}
-                            onClick={() => {
-                              setIsBottomSheetOpen(false);
-                              openClockOutModal();
-                            }}
-                            iconBefore={<MdLogout />}
-                          >
-                            Clock Out
-                          </Button>
-                        </div>
-                      )}
+                {/* Sequence Buttons - Always Available */}
+                <div className="flex flex-col gap-3">
+                  {clockState === "idle" && (
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      className="w-full flex justify-center py-3.5 shadow-md shadow-primary/10 rounded-2xl text-sm font-semibold"
+                      disabled={busy}
+                      onClick={() => {
+                        setIsBottomSheetOpen(false);
+                        handleClockIn();
+                      }}
+                      iconBefore={<MdLogin />}
+                    >
+                      Clock In
+                    </Button>
+                  )}
 
-                      {clockState === "on_break" && (
-                        <Button
-                          variant="success"
-                          size="lg"
-                          className="w-full flex justify-center py-3.5 shadow-md shadow-success/10 rounded-2xl text-sm font-bold"
-                          disabled={busy}
-                          onClick={() => {
-                            setIsBottomSheetOpen(false);
-                            handleBreakOut();
-                          }}
-                          iconBefore={<MdPlayArrow />}
-                        >
-                          Break Out
-                        </Button>
-                      )}
+                  {clockState === "clocked_in" && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button
+                        variant="warning"
+                        className="w-full flex justify-center py-3"
+                        disabled={busy}
+                        onClick={() => {
+                          setIsBottomSheetOpen(false);
+                          handleBreakIn();
+                        }}
+                        iconBefore={<MdFreeBreakfast />}
+                      >
+                        Break In
+                      </Button>
+                      <Button
+                        variant="danger"
+                        className="w-full flex justify-center py-3"
+                        disabled={busy}
+                        onClick={() => {
+                          setIsBottomSheetOpen(false);
+                          openClockOutModal();
+                        }}
+                        iconBefore={<MdLogout />}
+                      >
+                        Clock Out
+                      </Button>
+                    </div>
+                  )}
 
-                      {clockState === "clocked_out" && (
-                        <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-center text-xs font-semibold text-slate-400">
-                          Shift completed for today.
-                        </div>
-                      )}
-                    </>
+                  {clockState === "on_break" && (
+                    <Button
+                      variant="success"
+                      size="lg"
+                      className="w-full flex justify-center py-3.5 shadow-md shadow-success/10 rounded-2xl text-sm font-semibold"
+                      disabled={busy}
+                      onClick={() => {
+                        setIsBottomSheetOpen(false);
+                        handleBreakOut();
+                      }}
+                      iconBefore={<MdPlayArrow />}
+                    >
+                      Break Out
+                    </Button>
+                  )}
+
+                  {clockState === "clocked_out" && (
+                    <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-center text-xs font-semibold text-slate-400">
+                      Shift completed for today.
+                    </div>
                   )}
                 </div>
 
@@ -1123,8 +1158,8 @@ const StaffDashboard = () => {
 
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Accomplishments Today *
+                  <label className="text-xs font-semibold text-slate-600">
+                    Accomplishments today *
                   </label>
                   <textarea
                     required

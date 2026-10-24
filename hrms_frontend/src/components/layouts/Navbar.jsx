@@ -125,8 +125,10 @@ const Navbar = ({ onMobileToggle }) => {
         >
           <Avatar name={currentUser.name} color={currentUser.avatarColor} size={38} />
           <div className="flex-col hidden md:flex">
-            <span className="text-sm font-semibold text-text-primary leading-[1.2]">{currentUser.name}</span>
-            <span className="text-xs text-text-muted">{currentUser.role}</span>
+            <span className="text-sm font-semibold text-text-primary leading-[1.2]">{currentUser.name || "Admin"}</span>
+            <span className="text-[11px] font-medium text-slate-500 capitalize tracking-wide">
+              {currentUser.role ? currentUser.role.replace("_", " ").toLowerCase() : "Tenant Admin"}
+            </span>
           </div>
           <MdArrowDropDown className="text-xl text-gray-500" />
 
