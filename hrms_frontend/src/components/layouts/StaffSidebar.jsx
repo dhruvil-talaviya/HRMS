@@ -45,11 +45,19 @@ const StaffSidebar = ({
         } ${isCollapsed ? "w-[72px]" : "w-[260px]"}`}
       >
         {/* Logo */}
-        <div className="h-[70px] flex items-center justify-center px-5 border-b border-white/10 shrink-0">
+        <div
+          className={`h-[74px] flex items-center justify-center border-b border-white/10 shrink-0 transition-all duration-300 ${
+            isCollapsed ? "px-2" : "px-4"
+          }`}
+        >
           <img
             src={logo}
             alt="HRMS Logo"
-            className="h-10 w-auto max-w-[170px] object-contain"
+            className={`w-full object-contain transition-all duration-300 ${
+              isCollapsed
+                ? "max-w-[46px] max-h-[36px]"
+                : "max-w-[218px] max-h-[54px]"
+            }`}
           />
         </div>
 
