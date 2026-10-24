@@ -941,22 +941,44 @@ const Payroll = () => {
                       </span>
                     </div>
                   )}
-                  {Number(selectedPayroll.deduction || 0) > 0 && (
+                  {Number(
+                    selectedPayroll.salaryBreakdown?.customDeduction ??
+                      (selectedPayroll.salaryBreakdown
+                        ? 0
+                        : Number(selectedPayroll.deduction || 0) >=
+                          Number(selectedPayroll.lopDeduction || 0)
+                        ? Math.max(
+                            0,
+                            Number(selectedPayroll.deduction || 0) -
+                              Number(selectedPayroll.lopDeduction || 0) -
+                              Number(selectedPayroll.salaryBreakdown?.pfDeduction || 0) -
+                              Number(selectedPayroll.salaryBreakdown?.ptDeduction || 0)
+                          )
+                        : Number(selectedPayroll.deduction || 0))
+                  ) > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">Other Deductions</span>
+                      <span className="text-text-secondary lowercase">other deductions</span>
                       <span className="font-medium">
-                        ₹{Number(selectedPayroll.deduction).toLocaleString("en-IN")}
+                        ₹{Number(
+                          selectedPayroll.salaryBreakdown?.customDeduction ??
+                            selectedPayroll.deduction
+                        ).toLocaleString("en-IN")}
                       </span>
                     </div>
                   )}
                   <div className="border-t border-border-color pt-2 flex justify-between font-bold text-red-500">
-                    <span>Total Deductions</span>
+                    <span className="lowercase">total deductions</span>
                     <span>
                       -₹{(
-                        Number(selectedPayroll.deduction || 0) +
-                        Number(selectedPayroll.tax || 0) +
-                        Number(selectedPayroll.lopDeduction || 0) +
-                        Number(selectedPayroll.lateDeduction || 0)
+                        selectedPayroll.salaryBreakdown?.totalDeductions !== undefined
+                          ? Number(selectedPayroll.salaryBreakdown.totalDeductions)
+                          : Number(selectedPayroll.deduction || 0) +
+                            Number(selectedPayroll.tax || 0) +
+                            (Number(selectedPayroll.deduction || 0) >=
+                            Number(selectedPayroll.lopDeduction || 0)
+                              ? 0
+                              : Number(selectedPayroll.lopDeduction || 0)) +
+                            Number(selectedPayroll.lateDeduction || 0)
                       ).toLocaleString("en-IN")}
                     </span>
                   </div>

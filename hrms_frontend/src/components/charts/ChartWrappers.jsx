@@ -46,11 +46,16 @@ export const AreaChartComponent = ({
   yKey = "value",
   color = "#2563EB",
   suffix = "%",
+  prefix = "",
+  unit = "%",
+  domain = [0, 100],
+  height = 290,
+  name = "Rate",
 }) => {
   const gradientId = `grad-${xKey}-${yKey}-${color.replace(/[^a-zA-Z0-9]/g, "")}`;
 
   return (
-    <ResponsiveContainer width="100%" height={290}>
+    <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={data} margin={{ top: 15, right: 10, left: -20, bottom: 5 }}>
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -74,10 +79,15 @@ export const AreaChartComponent = ({
           fontWeight={500}
           tickLine={false}
           axisLine={false}
-          domain={[0, 100]}
-          unit="%"
+          domain={domain}
+          unit={unit}
+          tickFormatter={(v) =>
+            prefix
+              ? `${prefix}${typeof v === "number" && Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`
+              : `${v}${unit}`
+          }
         />
-        <Tooltip content={<CustomTooltip suffix={suffix} />} />
+        <Tooltip content={<CustomTooltip prefix={prefix} suffix={suffix} />} />
         <Area
           type="monotone"
           dataKey={yKey}
@@ -86,7 +96,7 @@ export const AreaChartComponent = ({
           fillOpacity={1}
           fill={`url(#${gradientId})`}
           activeDot={{ r: 5, fill: color, stroke: "#ffffff", strokeWidth: 2 }}
-          name="Attendance"
+          name={name}
         />
       </AreaChart>
     </ResponsiveContainer>

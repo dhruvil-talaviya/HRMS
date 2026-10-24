@@ -52,56 +52,74 @@ const StaffPayroll = () => {
   const breakdown = useMemo(() => {
     if (!current) return [];
 
-    const basic = Number(current.salaryBreakdown?.basic || current.basicSalary || 0);
-    const hra = Number(current.salaryBreakdown?.hra || 0);
-    const allowance = Number(current.allowance || current.salaryBreakdown?.specialAllowance || 0);
-    const shiftAllowance = Number(current.shiftAllowance || 0);
-    const overtimePay = Number(current.overtimePay || 0);
-    const bonus = Number(current.bonus || 0);
+    const sb = current.salaryBreakdown;
+    const basic = Number(sb?.basic ?? current.basicSalary ?? 0);
+    const hra = Number(sb?.hra ?? 0);
+    const conveyance = Number(sb?.conveyance ?? 0);
+    const specialAllowance = Number(
+      sb?.specialAllowance ?? (sb ? 0 : current.allowance ?? 0)
+    );
+    const shiftAllowance = Number(current.shiftAllowance || sb?.shiftAllowance || 0);
+    const overtimePay = Number(current.overtimePay || sb?.overtimePay || 0);
+    const bonus = Number(current.bonus || sb?.bonus || 0);
 
-    const lop = Number(current.lopDeduction || current.salaryBreakdown?.lopDeduction || 0);
-    const late = Number(current.lateDeduction || current.salaryBreakdown?.lateDeduction || 0);
-    const pf = Number(current.salaryBreakdown?.pfDeduction || 0);
-    const pt = Number(current.salaryBreakdown?.ptDeduction || 0);
-    const tax = Number(current.tax || 0);
-    const otherDed = Number(current.deduction || 0);
+    const lop = Number(sb?.lopDeduction ?? current.lopDeduction ?? 0);
+    const late = Number(sb?.lateDeduction ?? current.lateDeduction ?? 0);
+    const pf = Number(sb?.pfDeduction ?? 0);
+    const pt = Number(sb?.ptDeduction ?? 0);
+    const tax = Number(sb?.taxDeduction ?? current.tax ?? 0);
+    const customDed = Number(
+      sb?.customDeduction ??
+        (sb
+          ? 0
+          : Number(current.deduction || 0) >= lop
+          ? Math.max(0, Number(current.deduction || 0) - lop - pf - pt)
+          : Number(current.deduction || 0))
+    );
 
     const items = [
-      { label: "Base / Basic Salary", amount: basic, type: "credit" },
-      { label: "House Rent Allowance (HRA)", amount: hra, type: "credit" },
-      { label: "Other Allowances", amount: allowance, type: "credit" },
+      { label: "base / basic salary", amount: basic, type: "credit" },
     ];
 
+    if (hra > 0) {
+      items.push({ label: "house rent allowance (hra)", amount: hra, type: "credit" });
+    }
+    if (conveyance > 0) {
+      items.push({ label: "conveyance allowance", amount: conveyance, type: "credit" });
+    }
+    if (specialAllowance > 0) {
+      items.push({ label: "other allowances", amount: specialAllowance, type: "credit" });
+    }
     if (shiftAllowance > 0) {
-      items.push({ label: "Shift Differential Bonus", amount: shiftAllowance, type: "credit" });
+      items.push({ label: "shift differential bonus", amount: shiftAllowance, type: "credit" });
     }
     if (overtimePay > 0) {
-      items.push({ label: "Overtime Compensation", amount: overtimePay, type: "credit" });
+      items.push({ label: "overtime compensation", amount: overtimePay, type: "credit" });
     }
     if (bonus > 0) {
-      items.push({ label: "Performance Bonus", amount: bonus, type: "credit" });
+      items.push({ label: "performance bonus", amount: bonus, type: "credit" });
     }
 
     if (lop > 0) {
-      items.push({ label: "Loss of Pay (Absent Days)", amount: -lop, type: "debit" });
+      items.push({ label: "loss of pay (absent days)", amount: -lop, type: "debit" });
     }
     if (late > 0) {
-      items.push({ label: "Late Arrival Penalties", amount: -late, type: "debit" });
+      items.push({ label: "late arrival penalties", amount: -late, type: "debit" });
     }
     if (pf > 0) {
-      items.push({ label: "Provident Fund (PF)", amount: -pf, type: "debit" });
+      items.push({ label: "provident fund (pf)", amount: -pf, type: "debit" });
     }
     if (pt > 0) {
-      items.push({ label: "Professional Tax (PT)", amount: -pt, type: "debit" });
+      items.push({ label: "professional tax (pt)", amount: -pt, type: "debit" });
     }
     if (tax > 0) {
-      items.push({ label: "Tax Deduction (TDS)", amount: -tax, type: "debit" });
+      items.push({ label: "tax deduction (tds)", amount: -tax, type: "debit" });
     }
-    if (otherDed > 0) {
-      items.push({ label: "Other Deductions", amount: -otherDed, type: "debit" });
+    if (customDed > 0) {
+      items.push({ label: "other deductions", amount: -customDed, type: "debit" });
     }
 
-    items.push({ label: "Net Take-Home Pay", amount: Number(current.netSalary || 0), type: "net" });
+    items.push({ label: "net take-home pay", amount: Number(current.netSalary || 0), type: "net" });
 
     return items;
   }, [current]);
@@ -177,19 +195,41 @@ const StaffPayroll = () => {
 
             <div className="grid grid-cols-3 gap-3 md:gap-4">
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3 text-center border border-white/15">
-                <p className="text-white/70 text-xs mb-1">Base Salary</p>
-                <p className="text-white font-bold text-sm md:text-base">{inr(current.basicSalary)}</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3 text-center border border-white/15">
-                <p className="text-white/70 text-xs mb-1">Allowances & OT</p>
+                <p className="text-white/70 text-xs mb-1 lowercase">base salary</p>
                 <p className="text-white font-bold text-sm md:text-base">
-                  +{inr(Number(current.allowance || 0) + Number(current.overtimePay || 0) + Number(current.shiftAllowance || 0))}
+                  {inr(current.salaryBreakdown?.basic ?? current.basicSalary)}
                 </p>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3 text-center border border-white/15">
-                <p className="text-white/70 text-xs mb-1">Deductions & LOP</p>
+                <p className="text-white/70 text-xs mb-1 lowercase">allowances & ot</p>
+                <p className="text-white font-bold text-sm md:text-base">
+                  +{inr(
+                    current.salaryBreakdown
+                      ? Math.max(
+                          0,
+                          Number(current.salaryBreakdown.grossSalary || 0) -
+                            Number(current.salaryBreakdown.basic || 0)
+                        )
+                      : Number(current.allowance || 0) +
+                          Number(current.overtimePay || 0) +
+                          Number(current.shiftAllowance || 0) +
+                          Number(current.bonus || 0)
+                  )}
+                </p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3 text-center border border-white/15">
+                <p className="text-white/70 text-xs mb-1 lowercase">deductions & lop</p>
                 <p className="text-white font-bold text-sm md:text-base text-red-200">
-                  -{inr(Number(current.deduction || 0) + Number(current.tax || 0) + Number(current.lopDeduction || 0))}
+                  -{inr(
+                    current.salaryBreakdown?.totalDeductions !== undefined
+                      ? Number(current.salaryBreakdown.totalDeductions)
+                      : Number(current.deduction || 0) +
+                          Number(current.tax || 0) +
+                          (Number(current.deduction || 0) >=
+                          Number(current.lopDeduction || 0)
+                            ? 0
+                            : Number(current.lopDeduction || 0))
+                  )}
                 </p>
               </div>
             </div>
@@ -313,14 +353,21 @@ const StaffPayroll = () => {
         {/* History & Trend */}
         <div className="flex flex-col gap-6">
           <div className="bg-bg-secondary border border-border-color rounded-2xl p-5 shadow-sm">
-            <h3 className="font-bold text-text-primary text-base mb-3">
-              Net Salary Progression
+            <h3 className="font-bold text-text-primary text-base mb-3 lowercase">
+              net salary progression
             </h3>
             <div className="h-44">
               <AreaChartComponent
                 data={netSalaryTrend}
-                dataKey="value"
+                xKey="name"
+                yKey="value"
                 color="#2563EB"
+                suffix=""
+                prefix="₹"
+                unit=""
+                domain={["auto", "auto"]}
+                height={176}
+                name="net pay"
               />
             </div>
           </div>
@@ -440,67 +487,100 @@ const StaffPayroll = () => {
             {/* Earnings and Deductions */}
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div className="border border-border-color rounded-xl p-3 flex flex-col gap-2">
-                <span className="font-bold text-text-primary pb-1 border-b border-border-color">
-                  Earnings
+                <span className="font-bold text-text-primary pb-1 border-b border-border-color lowercase">
+                  earnings
                 </span>
                 <div className="flex justify-between">
-                  <span>Basic Salary</span>
-                  <span className="font-medium">{inr(selectedSlip.basicSalary)}</span>
+                  <span className="lowercase">basic salary</span>
+                  <span className="font-medium">
+                    {inr(selectedSlip.salaryBreakdown?.basic ?? selectedSlip.basicSalary)}
+                  </span>
                 </div>
-                {Number(selectedSlip.allowance || 0) > 0 && (
+                {Number(selectedSlip.salaryBreakdown?.hra || 0) > 0 && (
                   <div className="flex justify-between">
-                    <span>Allowances</span>
-                    <span className="font-medium">{inr(selectedSlip.allowance)}</span>
+                    <span className="lowercase">house rent allowance (hra)</span>
+                    <span className="font-medium">{inr(selectedSlip.salaryBreakdown.hra)}</span>
+                  </div>
+                )}
+                {Number(selectedSlip.salaryBreakdown?.conveyance || 0) > 0 && (
+                  <div className="flex justify-between">
+                    <span className="lowercase">conveyance allowance</span>
+                    <span className="font-medium">{inr(selectedSlip.salaryBreakdown.conveyance)}</span>
+                  </div>
+                )}
+                {Number(
+                  selectedSlip.salaryBreakdown?.specialAllowance ??
+                    (selectedSlip.salaryBreakdown ? 0 : selectedSlip.allowance) ??
+                    0
+                ) > 0 && (
+                  <div className="flex justify-between">
+                    <span className="lowercase">special allowance</span>
+                    <span className="font-medium">
+                      {inr(
+                        selectedSlip.salaryBreakdown?.specialAllowance ??
+                          selectedSlip.allowance
+                      )}
+                    </span>
                   </div>
                 )}
                 {Number(selectedSlip.shiftAllowance || 0) > 0 && (
                   <div className="flex justify-between text-indigo-600">
-                    <span>Shift Differential</span>
+                    <span className="lowercase">shift differential</span>
                     <span className="font-medium">+{inr(selectedSlip.shiftAllowance)}</span>
                   </div>
                 )}
                 {Number(selectedSlip.overtimePay || 0) > 0 && (
                   <div className="flex justify-between text-indigo-600">
-                    <span>Overtime Pay</span>
+                    <span className="lowercase">overtime pay</span>
                     <span className="font-medium">+{inr(selectedSlip.overtimePay)}</span>
                   </div>
                 )}
                 {Number(selectedSlip.bonus || 0) > 0 && (
                   <div className="flex justify-between text-emerald-600">
-                    <span>Bonus</span>
+                    <span className="lowercase">bonus</span>
                     <span className="font-medium">+{inr(selectedSlip.bonus)}</span>
                   </div>
                 )}
               </div>
 
               <div className="border border-border-color rounded-xl p-3 flex flex-col gap-2">
-                <span className="font-bold text-text-primary pb-1 border-b border-border-color">
-                  Deductions
+                <span className="font-bold text-text-primary pb-1 border-b border-border-color lowercase">
+                  deductions
                 </span>
-                {Number(selectedSlip.lopDeduction || 0) > 0 && (
+                {Number(selectedSlip.salaryBreakdown?.lopDeduction ?? selectedSlip.lopDeduction ?? 0) > 0 && (
                   <div className="flex justify-between text-red-500">
-                    <span>Loss of Pay (Absent)</span>
-                    <span className="font-medium">-{inr(selectedSlip.lopDeduction)}</span>
+                    <span className="lowercase">loss of pay (absent)</span>
+                    <span className="font-medium">
+                      -{inr(selectedSlip.salaryBreakdown?.lopDeduction ?? selectedSlip.lopDeduction)}
+                    </span>
                   </div>
                 )}
-                {Number(selectedSlip.lateDeduction || 0) > 0 && (
+                {Number(selectedSlip.salaryBreakdown?.lateDeduction ?? selectedSlip.lateDeduction ?? 0) > 0 && (
                   <div className="flex justify-between text-amber-500">
-                    <span>Late Penalties</span>
-                    <span className="font-medium">-{inr(selectedSlip.lateDeduction)}</span>
+                    <span className="lowercase">late penalties</span>
+                    <span className="font-medium">
+                      -{inr(selectedSlip.salaryBreakdown?.lateDeduction ?? selectedSlip.lateDeduction)}
+                    </span>
                   </div>
                 )}
-                <div className="flex justify-between">
-                  <span>Provident Fund (PF)</span>
-                  <span className="font-medium">{inr(selectedSlip.salaryBreakdown?.pfDeduction || 1800)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Professional Tax</span>
-                  <span className="font-medium">{inr(selectedSlip.salaryBreakdown?.ptDeduction || 200)}</span>
-                </div>
-                {Number(selectedSlip.tax || 0) > 0 && (
+                {Number(selectedSlip.salaryBreakdown?.pfDeduction || 0) > 0 && (
                   <div className="flex justify-between">
-                    <span>Tax (TDS)</span>
-                    <span className="font-medium">{inr(selectedSlip.tax)}</span>
+                    <span className="lowercase">provident fund (pf)</span>
+                    <span className="font-medium">-{inr(selectedSlip.salaryBreakdown.pfDeduction)}</span>
+                  </div>
+                )}
+                {Number(selectedSlip.salaryBreakdown?.ptDeduction || 0) > 0 && (
+                  <div className="flex justify-between">
+                    <span className="lowercase">professional tax (pt)</span>
+                    <span className="font-medium">-{inr(selectedSlip.salaryBreakdown.ptDeduction)}</span>
+                  </div>
+                )}
+                {Number(selectedSlip.salaryBreakdown?.taxDeduction ?? selectedSlip.tax ?? 0) > 0 && (
+                  <div className="flex justify-between">
+                    <span className="lowercase">tax (tds)</span>
+                    <span className="font-medium">
+                      -{inr(selectedSlip.salaryBreakdown?.taxDeduction ?? selectedSlip.tax)}
+                    </span>
                   </div>
                 )}
               </div>
