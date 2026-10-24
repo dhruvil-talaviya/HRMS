@@ -145,28 +145,39 @@ export const updateStaff = async (req: Request, res: Response) => {
 export const setupPassword = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const { newPassword } = req.body;
+    const newPassword = req.body.newPassword || req.body.password;
 
-
-    if (!newPassword || newPassword.length < 8) {
+    if (!newPassword || typeof newPassword !== "string" || newPassword.length < 6) {
       return res.status(400).json({
         success: false,
-        message: "Password must be at least 8 characters",
+        message: "password must be at least 6 characters",
       });
     }
 
+    const userId = user?.userId || user?.id;
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "user id not found in token",
+      });
+    }
 
-    await setupPasswordService(user.dbName, Number(user.userId), newPassword);
-
+    await setupPasswordService(
+      user.dbName,
+      userId,
+      newPassword,
+      user.isStaff !== false,
+      user.email
+    );
 
     return res.status(200).json({
       success: true,
-      message: "Password updated successfully",
+      message: "password updated successfully",
     });
   } catch (error: any) {
-    return res.status(500).json({
+    return res.status(400).json({
       success: false,
-      message: error.message,
+      message: error.message || "failed to update password",
     });
   }
 };

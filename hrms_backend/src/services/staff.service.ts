@@ -1,6 +1,8 @@
 import bcrypt from "bcrypt";
+import DatabaseConnection from "../connection/postgresql.connection";
 import { getTenantConnection } from "../connection/tenant.connection";
 import { Staff } from "../entity/tenant/staff.entity";
+import { Users } from "../entity/master/users.entity";
 import { Leave } from "../entity/tenant/staff/staff.leave.entity";
 import { Department } from "../entity/tenant/department.entity";
 import { Designation } from "../entity/tenant/designation.entity";
@@ -86,24 +88,67 @@ export const updateStaffStatusService = async (
 
 export const setupPasswordService = async (
   dbName: string,
-  staffId: number,
+  staffId: number | string,
   newPassword: string,
+  isStaff: boolean = true,
+  userEmail?: string
 ) => {
-  const dataSource = await getTenantConnection(dbName);
-  const staffRepo = dataSource.getRepository(Staff);
-
-  const staff = await staffRepo.findOne({ where: { id: Number(staffId) } });
-  if (!staff) throw new Error("staff not found");
-
-  if (!newPassword || newPassword.length < 6) {
+  if (!newPassword || typeof newPassword !== "string" || newPassword.length < 6) {
     throw new Error("password must be at least 6 characters");
   }
 
-  staff.password = await bcrypt.hash(newPassword, 10);
-  staff.status = "Active";
-  staff.isFirstLogin = false;
-  const saved = await staffRepo.save(staff);
-  return sanitizeStaff(saved);
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  // If flagged as non-staff (tenant admin), check master DB first
+  if (!isStaff) {
+    const masterRepo = DatabaseConnection.getRepository(Users);
+    const masterUser = await masterRepo.findOne({
+      where: [{ id: String(staffId) }, ...(userEmail ? [{ email: userEmail }] : [])],
+    });
+    if (masterUser) {
+      masterUser.password = hashedPassword;
+      await masterRepo.save(masterUser);
+      return { id: masterUser.id, email: masterUser.email, name: masterUser.name };
+    }
+  }
+
+  // Attempt to find and update staff member in tenant DB
+  try {
+    const dataSource = await getTenantConnection(dbName);
+    const staffRepo = dataSource.getRepository(Staff);
+
+    let staff = null;
+    if (!isNaN(Number(staffId))) {
+      staff = await staffRepo.findOne({ where: { id: Number(staffId) } });
+    }
+    if (!staff && userEmail) {
+      staff = await staffRepo.findOne({ where: { email: userEmail.toLowerCase() } });
+    }
+
+    if (staff) {
+      staff.password = hashedPassword;
+      staff.status = "Active";
+      staff.isFirstLogin = false;
+      const saved = await staffRepo.save(staff);
+      return sanitizeStaff(saved);
+    }
+  } catch {
+    // If tenant connection fails, fall back to master user check
+  }
+
+  // Fallback: Check master DB Users table
+  const masterRepo = DatabaseConnection.getRepository(Users);
+  const masterUser = await masterRepo.findOne({
+    where: [{ id: String(staffId) }, ...(userEmail ? [{ email: userEmail }] : [])],
+  });
+
+  if (masterUser) {
+    masterUser.password = hashedPassword;
+    await masterRepo.save(masterUser);
+    return { id: masterUser.id, email: masterUser.email, name: masterUser.name };
+  }
+
+  throw new Error("user not found");
 };
 
 export const getStaffByIdService = async (dbName: string, id: number) => {

@@ -80,9 +80,14 @@ const SetupPassword = () => {
       );
 
       toast.success("password updated successfully! your account is now active.");
-      navigate("/staff/dashboard");
-    } catch {
-      toast.error("something went wrong. please try again.");
+      if (user?.isStaff) {
+        navigate("/staff/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      const msg = err?.response?.data?.message || "something went wrong. please try again.";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
