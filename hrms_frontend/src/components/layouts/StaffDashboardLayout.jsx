@@ -8,7 +8,7 @@ const StaffDashboardLayout = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-100 via-blue-50/30 to-slate-200 transition-all duration-300">
+    <div className="flex min-h-screen bg-slate-50/70 dark:bg-slate-950 transition-all duration-300">
       <StaffSidebar
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
@@ -21,7 +21,7 @@ const StaffDashboardLayout = () => {
         }`}
       >
         <StaffNavbar onMobileToggle={() => setIsMobileOpen(!isMobileOpen)} />
-        <main className="flex-1 p-5 md:p-[30px] max-w-[1500px] w-full mx-auto">
+        <main className="flex-1 p-5 sm:p-7 md:p-8 max-w-[1600px] w-full mx-auto">
           <Outlet />
         </main>
       </div>

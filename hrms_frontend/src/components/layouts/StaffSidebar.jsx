@@ -45,39 +45,39 @@ const StaffSidebar = ({
         } ${isCollapsed ? "w-[72px]" : "w-[260px]"}`}
       >
         {/* Logo */}
-        <div className="h-[70px] flex items-center justify-center px-6 border-b border-white/10 shrink-0">
+        <div className="h-[70px] flex items-center justify-center px-5 border-b border-white/10 shrink-0">
           <img
             src={logo}
             alt="HRMS Logo"
-            className="h-22 w-auto object-contain"
+            className="h-10 w-auto max-w-[170px] object-contain"
           />
         </div>
 
         {/* Employee Portal badge */}
         {!isCollapsed && (
-          <div className="mx-3 mt-4 mb-1 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg">
-            <span className="text-xs font-semibold text-primary lowercase">
+          <div className="mx-3.5 mt-3 mb-1 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+            <span className="text-[11px] font-semibold text-blue-400 lowercase">
               employee portal
             </span>
           </div>
         )}
 
         {/* Nav Links */}
-        <nav className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-1">
+        <nav className="flex-1 overflow-y-auto px-3.5 py-3 flex flex-col gap-1.5">
           {menuItems.map((item) => (
             <NavLink
               key={item.name}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center px-4 py-3 rounded-lg hover:bg-bg-sidebar-hover hover:text-white transition-all text-sm font-medium gap-3 whitespace-nowrap ${
+                `flex items-center px-3.5 py-2.5 rounded-xl transition-all duration-200 text-xs font-semibold gap-3 whitespace-nowrap lowercase ${
                   isActive
-                    ? "bg-primary text-white shadow-[0_4px_14px_0_rgba(37,99,235,0.3)]"
-                    : "text-gray-400"
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/30 font-bold"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/60"
                 }`
               }
               onClick={() => setIsMobileOpen(false)}
             >
-              <span className="text-xl shrink-0">{item.icon}</span>
+              <span className="text-lg shrink-0">{item.icon}</span>
               <span
                 className={`transition-opacity duration-300 ${
                   isCollapsed
@@ -92,7 +92,7 @@ const StaffSidebar = ({
         </nav>
 
         {/* Collapse toggle */}
-        <div className="p-4 border-t border-white/5 flex items-center justify-between shrink-0">
+        <div className="p-4 border-t border-white/10 flex items-center justify-between shrink-0">
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             className="text-gray-400 hover:bg-bg-sidebar-hover hover:text-white text-xl p-2 rounded-full w-9 h-9 flex items-center justify-center transition-all hidden md:flex"

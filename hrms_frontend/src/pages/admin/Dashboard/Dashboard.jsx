@@ -242,70 +242,69 @@ const Dashboard = () => {
   return (
     <div className="space-y-6 pb-10">
       {/* Executive Welcome & Live Ops Banner */}
-      <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-indigo-900/30 bg-gradient-to-r from-slate-950 via-[#0B132B] to-[#1C2541] text-white p-6 sm:p-8">
-        {/* Ambient Glows */}
-        <div className="absolute -right-16 -top-16 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute right-1/3 -bottom-16 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -left-10 top-1/2 w-48 h-48 bg-purple-600/10 rounded-full blur-2xl pointer-events-none" />
+      <div className="relative rounded-3xl overflow-hidden border border-slate-800/80 bg-gradient-to-br from-slate-950 via-[#0c1322] to-slate-900 text-white p-6 sm:p-8 shadow-xl shadow-slate-950/20">
+        {/* Subtle Ambient Radial Glows */}
+        <div className="absolute -right-10 -top-10 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute right-1/3 -bottom-20 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold mb-3 tracking-wide backdrop-blur-md">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>System Operational • Live Cloud Sync</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-semibold mb-3 tracking-wide backdrop-blur-md lowercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>system operational • live cloud sync</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white leading-tight">
-              Welcome back, {currentUser?.name || "Administrator"} 👋
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight lowercase">
+              welcome back, {currentUser?.name || "administrator"} 👋
             </h1>
-            <p className="text-slate-300 text-sm mt-1.5 leading-relaxed font-normal">
-              Executive HR Dashboard • Live attendance tracking, shift monitoring & automated payroll engine
+            <p className="text-slate-400 text-sm mt-1.5 leading-relaxed font-normal lowercase">
+              executive hr dashboard • live attendance tracking, shift monitoring & automated payroll engine
             </p>
 
             {/* Quick Action Navigation Buttons */}
             <div className="flex flex-wrap items-center gap-2.5 mt-5">
               <Link
                 to="/attendance"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-900/40 hover:scale-[1.02]"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-all shadow-md shadow-blue-600/30 hover:-translate-y-0.5 lowercase"
               >
                 <MdSchedule size={15} />
-                Attendance Monitor
+                <span>attendance monitor</span>
               </Link>
               <Link
                 to="/payroll"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold backdrop-blur-md border border-white/15 transition-all hover:scale-[1.02]"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.07] hover:bg-white/[0.14] text-slate-200 text-xs font-semibold backdrop-blur-md border border-white/10 transition-all hover:-translate-y-0.5 lowercase"
               >
                 <MdPayments size={15} />
-                Manage Payroll
+                <span>manage payroll</span>
               </Link>
               <Link
                 to="/addemployee"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold backdrop-blur-md border border-white/15 transition-all hover:scale-[1.02]"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.07] hover:bg-white/[0.14] text-slate-200 text-xs font-semibold backdrop-blur-md border border-white/10 transition-all hover:-translate-y-0.5 lowercase"
               >
                 <MdAddCircleOutline size={15} />
-                Add Employee
+                <span>add employee</span>
               </Link>
               <button
                 onClick={fetchDashboardBackendData}
                 disabled={loadingReal}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-slate-300 text-xs font-medium border border-white/10 transition-all cursor-pointer"
-                title="Refresh live metrics"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.09] text-slate-300 text-xs font-medium border border-white/[0.08] transition-all cursor-pointer lowercase"
+                title="refresh live metrics"
               >
                 <MdFlashOn className={`${loadingReal ? "animate-spin text-amber-400" : "text-amber-400"}`} size={14} />
-                <span>{loadingReal ? "Syncing..." : "Sync"}</span>
+                <span>{loadingReal ? "syncing..." : "sync"}</span>
               </button>
             </div>
           </div>
 
-          {/* Live Clock Card */}
-          <div className="bg-white/10 backdrop-blur-xl p-4 sm:p-5 rounded-2xl border border-white/15 flex items-center gap-4 shadow-xl self-start lg:self-auto shrink-0">
-            <div className="p-3 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-xl text-white shadow-lg shadow-indigo-600/30">
-              <MdSchedule className="text-2xl" />
+          {/* Sleek Live Clock & Date Widget */}
+          <div className="bg-white/[0.05] backdrop-blur-xl px-5 py-4 rounded-2xl border border-white/[0.09] flex items-center gap-4 shadow-lg shadow-black/20 self-start lg:self-auto shrink-0">
+            <div className="w-11 h-11 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-md shadow-blue-500/25 shrink-0">
+              <MdSchedule className="text-xl" />
             </div>
             <div>
-              <div className="text-xl sm:text-2xl font-black font-mono tracking-wider text-white">
+              <div className="text-xl sm:text-2xl font-bold font-mono tracking-wide text-white lowercase">
                 {liveTime}
               </div>
-              <div className="text-xs text-slate-300 font-medium mt-0.5">
+              <div className="text-xs text-slate-400 font-medium mt-0.5 lowercase">
                 {liveDate}
               </div>
             </div>
@@ -316,17 +315,17 @@ const Dashboard = () => {
       {/* KPI Cards Grid - Executive Responsive Layout */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-4 sm:gap-5">
         <KPICard
-          title="Total Employees"
+          title="total employees"
           value={stats.total}
           icon={<MdPeople />}
           trend="+4.2% growth"
           trendType="up"
           color="blue"
-          subtitle="Active workforce"
+          subtitle="active workforce"
         />
 
         <KPICard
-          title="Present Today"
+          title="present today"
           value={stats.present}
           icon={<MdCheckCircle />}
           trend={`${stats.presentRate}% on-duty`}
@@ -337,43 +336,43 @@ const Dashboard = () => {
         />
 
         <KPICard
-          title="Absent Today"
+          title="absent today"
           value={stats.absent}
           icon={<MdCancel />}
           trend={`${stats.absentRate}% rate`}
           trendType={stats.absent > 0 ? "down" : "neutral"}
           color="rose"
-          subtitle="Unpunched / away"
+          subtitle="unpunched / away"
         />
 
         <KPICard
-          title="On Leave"
+          title="on leave"
           value={stats.onLeave}
           icon={<MdEventNote />}
           trend={`${stats.onLeave} approved`}
           trendType="neutral"
           color="amber"
-          subtitle="Authorized leave"
+          subtitle="authorized leave"
         />
 
         <KPICard
-          title="New Joiners"
+          title="new joiners"
           value={stats.newJoiners}
           icon={<MdPersonAdd />}
           trend="+2 recent"
           trendType="up"
           color="indigo"
-          subtitle="Last 90 days"
+          subtitle="last 90 days"
         />
 
         <KPICard
-          title="Monthly Payroll"
+          title="monthly payroll"
           value={`₹${stats.payrollCost.toLocaleString("en-IN")}`}
           icon={<MdAttachMoney />}
-          trend="Dynamic sync"
+          trend="dynamic sync"
           trendType="neutral"
           color="teal"
-          subtitle="Attendance based"
+          subtitle="attendance based"
         />
       </div>
 
